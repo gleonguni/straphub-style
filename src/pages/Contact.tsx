@@ -38,11 +38,11 @@ const Contact = () => {
         <meta name="description" content="Get in touch with StrapHub. We're here to help with any questions about our smartwatch straps." />
       </Helmet>
 
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col overflow-x-hidden w-full max-w-full">
         <AnnouncementBar />
         <Header cartCount={totalItems} onCartClick={() => setIsCartOpen(true)} />
 
-        <main className="flex-1">
+        <main className="flex-1 overflow-x-hidden">
           {/* Header */}
           <div className="bg-muted py-12 md:py-16">
             <div className="container text-center">

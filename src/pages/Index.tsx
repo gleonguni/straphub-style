@@ -19,17 +19,17 @@ const Index = () => {
     <>
       <Helmet>
         <title>StrapHub - Premium Smartwatch Straps | UK's Best Selection</title>
-        <meta name="description" content="Shop premium smartwatch straps for Apple Watch, Samsung, Garmin & more. Free UK shipping over £25. 100-day returns. Same-day dispatch." />
+        <meta name="description" content="Shop premium smartwatch straps for Apple Watch, Samsung, Garmin & more. Free UK shipping over £25. 30-day returns. Same-day dispatch." />
       </Helmet>
 
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col overflow-x-hidden w-full max-w-full">
         <AnnouncementBar />
         <Header 
           cartCount={totalItems} 
           onCartClick={() => setIsCartOpen(true)} 
         />
         
-        <main className="flex-1">
+        <main className="flex-1 overflow-x-hidden">
           <HeroSection />
           <TrustSection />
           <FeaturedCollections />
