@@ -163,7 +163,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 </p>
               )}
               <Button 
-                className="w-full" 
+                className="w-full bg-success hover:bg-success/90" 
                 size="lg" 
                 onClick={handleCheckout}
                 disabled={isLoading}

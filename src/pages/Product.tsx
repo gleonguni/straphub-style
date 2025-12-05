@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Minus, Plus, Truck, RefreshCw, Shield, ChevronDown, Loader2 } from "lucide-react";
+import { Truck, RefreshCw, Shield, ChevronDown, ChevronLeft, ChevronRight, Loader2, Check, X, ThumbsUp, ThumbsDown } from "lucide-react";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/layout/CartDrawer";
 import { ShopifyProductCard } from "@/components/products/ShopifyProductCard";
+import { TrustGuaranteeSection } from "@/components/home/TrustGuaranteeSection";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useShopifyProduct, useShopifyProducts } from "@/hooks/useShopifyProducts";
@@ -18,14 +19,66 @@ const Product = () => {
   const { id } = useParams();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
-  const [quantity, setQuantity] = useState(1);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<string | null>("description");
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [mobileImageIndex, setMobileImageIndex] = useState(0);
 
   const { data: product, isLoading, error } = useShopifyProduct(id || "");
-  const { data: relatedProducts } = useShopifyProducts(4);
+  const { data: relatedProducts } = useShopifyProducts(8);
   const { addItem } = useCartStore();
   const totalItems = useCartStore((state) => state.getTotalItems());
+
+  // Get the selected variant
+  const selectedVariant = product?.variants.edges[selectedVariantIndex]?.node;
+
+  // Filter images to only show images related to selected variant
+  const filteredImages = useMemo(() => {
+    if (!product) return [];
+    
+    const allImages = product.images.edges;
+    
+    // If variant has a specific image, prioritize it
+    if (selectedVariant?.image?.url) {
+      const variantImageUrl = selectedVariant.image.url;
+      const variantImage = allImages.find(img => img.node.url === variantImageUrl);
+      if (variantImage) {
+        // Return variant image first, then others that aren't variant-specific
+        return [variantImage, ...allImages.filter(img => img.node.url !== variantImageUrl)];
+      }
+    }
+    
+    return allImages;
+  }, [product, selectedVariant]);
+
+  // Reset image selection when variant changes
+  useEffect(() => {
+    setSelectedImage(0);
+    setMobileImageIndex(0);
+  }, [selectedVariantIndex]);
+
+  // Smart variant selection that preserves other options
+  const handleOptionChange = (optionName: string, optionValue: string) => {
+    if (!product) return;
+    
+    // Get current selected options
+    const currentOptions = selectedVariant?.selectedOptions || [];
+    
+    // Build new options array
+    const newOptions = currentOptions.map(opt => 
+      opt.name === optionName ? { ...opt, value: optionValue } : opt
+    );
+    
+    // Find variant that matches all new options
+    const matchingVariantIndex = product.variants.edges.findIndex(v => 
+      v.node.selectedOptions.every(opt => 
+        newOptions.find(newOpt => newOpt.name === opt.name && newOpt.value === opt.value)
+      )
+    );
+    
+    if (matchingVariantIndex >= 0) {
+      setSelectedVariantIndex(matchingVariantIndex);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -49,7 +102,7 @@ const Product = () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-2">Product not found</h1>
             <p className="text-muted-foreground mb-4">The product you're looking for doesn't exist.</p>
-            <Button asChild>
+            <Button asChild className="bg-success hover:bg-success/90">
               <Link to="/collections/all">Browse All Products</Link>
             </Button>
           </div>
@@ -59,12 +112,11 @@ const Product = () => {
     );
   }
 
-  const selectedVariant = product.variants.edges[selectedVariantIndex]?.node;
   const price = selectedVariant?.price.amount || product.priceRange.minVariantPrice.amount;
   const compareAtPrice = selectedVariant?.compareAtPrice?.amount;
   const discount = calculateDiscount(price, compareAtPrice);
   const hasFreeShipping = parseFloat(price) >= 25;
-  const images = product.images.edges;
+  const isInStock = selectedVariant?.availableForSale ?? true;
 
   const handleAddToCart = () => {
     if (!selectedVariant) {
@@ -77,21 +129,60 @@ const Product = () => {
       variantId: selectedVariant.id,
       variantTitle: selectedVariant.title,
       price: selectedVariant.price,
-      quantity,
+      quantity: 1,
       selectedOptions: selectedVariant.selectedOptions,
     };
 
     addItem(cartItem);
     toast.success("Added to cart", {
-      description: `${product.title} x ${quantity}`,
+      description: product.title,
       position: "top-center",
     });
   };
 
-  const accordionSections = [
-    { id: "description", title: "Description", content: product.description || "No description available." },
-    { id: "shipping", title: "Shipping & Returns", content: "Free UK shipping on orders over £25. Same-day dispatch on orders placed before 9pm. 100-day hassle-free returns." },
-  ];
+  // Get variant image for color swatches
+  const getVariantImage = (optionValue: string, optionName: string) => {
+    const variant = product.variants.edges.find(v =>
+      v.node.selectedOptions.some(o => o.name === optionName && o.value === optionValue)
+    );
+    return variant?.node.image?.url;
+  };
+
+  // Parse description to preserve formatting
+  const formatDescription = (description: string) => {
+    if (!description) return null;
+    
+    // Split by line breaks and process
+    const lines = description.split(/\n+/).filter(line => line.trim());
+    
+    return lines.map((line, index) => {
+      const trimmed = line.trim();
+      
+      // Check if it looks like a heading (short, ends with colon, or all caps)
+      if (trimmed.length < 50 && (trimmed.endsWith(':') || trimmed === trimmed.toUpperCase())) {
+        return <h4 key={index} className="font-semibold text-foreground mt-4 mb-2">{trimmed}</h4>;
+      }
+      
+      // Check if it's a bullet point
+      if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
+        return <li key={index} className="ml-4 text-muted-foreground">{trimmed.substring(1).trim()}</li>;
+      }
+      
+      return <p key={index} className="text-muted-foreground mb-2">{trimmed}</p>;
+    });
+  };
+
+  // Mobile carousel navigation
+  const nextMobileImage = () => {
+    setMobileImageIndex((prev) => (prev + 1) % filteredImages.length);
+  };
+
+  const prevMobileImage = () => {
+    setMobileImageIndex((prev) => (prev - 1 + filteredImages.length) % filteredImages.length);
+  };
+
+  // Get main product image for compatibility badge
+  const mainProductImage = filteredImages[0]?.node.url || '/placeholder.svg';
 
   return (
     <>
@@ -121,29 +212,73 @@ const Product = () => {
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
               {/* Image Gallery */}
               <div className="space-y-4">
-                <div className="aspect-square bg-muted rounded-xl overflow-hidden">
-                  <img 
-                    src={images[selectedImage]?.node.url || '/placeholder.svg'}
-                    alt={images[selectedImage]?.node.altText || product.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                {images.length > 1 && (
-                  <div className="grid grid-cols-4 gap-3">
-                    {images.map((image, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedImage(index)}
-                        className={cn(
-                          "aspect-square rounded-lg overflow-hidden border-2 transition-colors",
-                          selectedImage === index ? "border-primary" : "border-transparent"
-                        )}
-                      >
-                        <img src={image.node.url} alt="" className="w-full h-full object-cover" />
-                      </button>
-                    ))}
+                {/* Mobile Carousel */}
+                <div className="md:hidden relative">
+                  <div className="aspect-square bg-muted rounded-xl overflow-hidden">
+                    <img 
+                      src={filteredImages[mobileImageIndex]?.node.url || '/placeholder.svg'}
+                      alt={filteredImages[mobileImageIndex]?.node.altText || product.title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                )}
+                  {filteredImages.length > 1 && (
+                    <>
+                      <button 
+                        onClick={prevMobileImage}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-background/80 rounded-full flex items-center justify-center shadow-md"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={nextMobileImage}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-background/80 rounded-full flex items-center justify-center shadow-md"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                        {filteredImages.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setMobileImageIndex(index)}
+                            className={cn(
+                              "w-2 h-2 rounded-full transition-colors",
+                              mobileImageIndex === index ? "bg-primary" : "bg-background/60"
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Desktop Gallery */}
+                <div className="hidden md:block">
+                  <div className="aspect-square bg-muted rounded-xl overflow-hidden border border-border">
+                    <img 
+                      src={filteredImages[selectedImage]?.node.url || '/placeholder.svg'}
+                      alt={filteredImages[selectedImage]?.node.altText || product.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {filteredImages.length > 1 && (
+                    <div className="grid grid-cols-4 gap-3 mt-3">
+                      {filteredImages.map((image, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedImage(index)}
+                          className={cn(
+                            "aspect-square rounded-lg overflow-hidden border-2 transition-all",
+                            selectedImage === index 
+                              ? "border-primary ring-2 ring-primary/20" 
+                              : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <img src={image.node.url} alt="" className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Product Info */}
@@ -154,10 +289,10 @@ const Product = () => {
                 <h1 className="text-2xl md:text-3xl font-bold mb-4">{product.title}</h1>
 
                 {/* Price */}
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-3 mb-4">
                   <span className={cn(
                     "text-2xl font-bold",
-                    discount > 0 && "text-sale"
+                    discount > 0 && "text-success"
                   )}>
                     {formatPrice(price)}
                   </span>
@@ -179,113 +314,276 @@ const Product = () => {
                       Free Shipping
                     </span>
                   )}
-                  {selectedVariant?.availableForSale && (
-                    <span className="bg-muted px-2 py-0.5 text-xs font-medium rounded">In Stock</span>
+                  {isInStock ? (
+                    <span className="badge-in-stock">
+                      <span className="w-4 h-4 rounded-full bg-success flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-success-foreground" />
+                      </span>
+                      In Stock
+                    </span>
+                  ) : (
+                    <span className="badge-out-of-stock">
+                      <span className="w-4 h-4 rounded-full bg-destructive flex items-center justify-center">
+                        <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                      </span>
+                      Out of Stock
+                    </span>
                   )}
                 </div>
 
                 {/* Variant Selection */}
                 {product.options.length > 0 && product.options[0].name !== "Title" && (
                   <div className="mb-6">
-                    {product.options.map((option) => (
-                      <div key={option.name} className="mb-4">
-                        <p className="text-sm font-medium mb-3">
-                          {option.name}: <span className="text-muted-foreground">{selectedVariant?.selectedOptions.find(o => o.name === option.name)?.value}</span>
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {option.values.map((value) => {
-                            const variantIndex = product.variants.edges.findIndex(v => 
-                              v.node.selectedOptions.some(o => o.name === option.name && o.value === value)
-                            );
-                            const isSelected = selectedVariant?.selectedOptions.some(o => o.name === option.name && o.value === value);
-                            
-                            return (
-                              <button
-                                key={value}
-                                onClick={() => variantIndex >= 0 && setSelectedVariantIndex(variantIndex)}
-                                className={cn(
-                                  "px-4 py-2 border rounded-lg text-sm font-medium transition-colors",
-                                  isSelected 
-                                    ? "border-primary bg-primary text-primary-foreground" 
-                                    : "border-border hover:border-primary"
-                                )}
-                              >
-                                {value}
-                              </button>
-                            );
-                          })}
+                    {product.options.map((option) => {
+                      const isColorOption = option.name.toLowerCase().includes('color') || option.name.toLowerCase().includes('colour');
+                      
+                      return (
+                        <div key={option.name} className="mb-4">
+                          <p className="text-sm font-medium mb-3">
+                            {option.name}: <span className="text-muted-foreground">
+                              {selectedVariant?.selectedOptions.find(o => o.name === option.name)?.value}
+                            </span>
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {option.values.map((value) => {
+                              const isSelected = selectedVariant?.selectedOptions.some(
+                                o => o.name === option.name && o.value === value
+                              );
+                              const variantImage = isColorOption ? getVariantImage(value, option.name) : null;
+                              
+                              if (isColorOption && variantImage) {
+                                // Image-based swatch for colors
+                                return (
+                                  <button
+                                    key={value}
+                                    onClick={() => handleOptionChange(option.name, value)}
+                                    className={cn(
+                                      "w-12 h-12 rounded-lg overflow-hidden border-2 transition-all",
+                                      isSelected 
+                                        ? "border-primary ring-2 ring-primary/20" 
+                                        : "border-border hover:border-primary/50"
+                                    )}
+                                    title={value}
+                                  >
+                                    <img src={variantImage} alt={value} className="w-full h-full object-cover" />
+                                  </button>
+                                );
+                              }
+                              
+                              // Text-based button for non-color options or colors without images
+                              return (
+                                <button
+                                  key={value}
+                                  onClick={() => handleOptionChange(option.name, value)}
+                                  className={cn(
+                                    "px-4 py-2 border rounded-lg text-sm font-medium transition-colors",
+                                    isSelected 
+                                      ? "border-primary bg-primary text-primary-foreground" 
+                                      : "border-border hover:border-primary"
+                                  )}
+                                >
+                                  {value}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
-                {/* Quantity & Add to Cart */}
-                <div className="flex gap-4 mb-6">
-                  <div className="flex items-center border border-border rounded-lg">
-                    <button 
-                      className="qty-btn rounded-l-lg"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="w-12 text-center font-medium">{quantity}</span>
-                    <button 
-                      className="qty-btn rounded-r-lg"
-                      onClick={() => setQuantity(quantity + 1)}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
+                {/* Add to Cart */}
+                <Button 
+                  size="lg" 
+                  className={cn(
+                    "w-full mb-4",
+                    isInStock ? "bg-success hover:bg-success/90" : "bg-muted text-muted-foreground"
+                  )}
+                  onClick={handleAddToCart}
+                  disabled={!isInStock}
+                >
+                  {isInStock ? "Add to Cart" : "Out of Stock"}
+                </Button>
+
+                {/* Compatible With Badge */}
+                <div className="flex items-center gap-3 p-3 bg-muted rounded-lg mb-4">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden border border-border">
+                    <img src={mainProductImage} alt="" className="w-full h-full object-cover" />
                   </div>
-                  <Button 
-                    size="lg" 
-                    className="flex-1"
-                    onClick={handleAddToCart}
-                    disabled={!selectedVariant?.availableForSale}
-                  >
-                    {selectedVariant?.availableForSale ? "Add to Cart" : "Out of Stock"}
-                  </Button>
+                  <div>
+                    <p className="text-xs text-muted-foreground">This product is compatible with</p>
+                    <p className="text-sm font-medium">
+                      {product.title.toLowerCase().includes('apple') ? 'Apple Watch' : 
+                       product.title.toLowerCase().includes('samsung') ? 'Samsung Galaxy Watch' :
+                       product.title.toLowerCase().includes('garmin') ? 'Garmin Watches' :
+                       'Multiple Watch Brands'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Promotional Box */}
+                <div className="bg-sale/10 border border-sale/30 rounded-lg p-4 mb-6">
+                  <div className="flex items-center gap-2 text-sale font-semibold mb-1">
+                    <Truck className="w-4 h-4" />
+                    Same-Day Dispatch
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Order before 9pm for same-day dispatch. Free UK shipping on orders over £25.
+                  </p>
                 </div>
 
                 {/* Trust Icons */}
-                <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg mb-8">
+                <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg mb-6">
                   <div className="text-center">
-                    <Truck className="w-5 h-5 mx-auto mb-1 text-primary" />
+                    <Truck className="w-5 h-5 mx-auto mb-1 text-success" />
                     <p className="text-xs">Free Shipping £25+</p>
                   </div>
                   <div className="text-center">
-                    <RefreshCw className="w-5 h-5 mx-auto mb-1 text-primary" />
+                    <RefreshCw className="w-5 h-5 mx-auto mb-1 text-success" />
                     <p className="text-xs">100-Day Returns</p>
                   </div>
                   <div className="text-center">
-                    <Shield className="w-5 h-5 mx-auto mb-1 text-primary" />
+                    <Shield className="w-5 h-5 mx-auto mb-1 text-success" />
                     <p className="text-xs">Secure Checkout</p>
                   </div>
                 </div>
 
-                {/* Accordion Sections */}
+                {/* Description Accordion */}
                 <div className="border-t border-border">
-                  {accordionSections.map((section) => (
-                    <div key={section.id} className="border-b border-border">
-                      <button
-                        className="flex items-center justify-between w-full py-4 font-medium"
-                        onClick={() => setExpandedSection(
-                          expandedSection === section.id ? null : section.id
-                        )}
-                      >
-                        {section.title}
-                        <ChevronDown className={cn(
-                          "w-4 h-4 transition-transform",
-                          expandedSection === section.id && "rotate-180"
-                        )} />
-                      </button>
-                      {expandedSection === section.id && (
-                        <div className="pb-4 text-sm text-muted-foreground whitespace-pre-line animate-fade-in">
-                          {section.content}
-                        </div>
-                      )}
+                  <div className="border-b border-border">
+                    <button
+                      className="flex items-center justify-between w-full py-4 font-medium"
+                      onClick={() => setExpandedSection(expandedSection === "description" ? null : "description")}
+                    >
+                      Description
+                      <ChevronDown className={cn(
+                        "w-4 h-4 transition-transform",
+                        expandedSection === "description" && "rotate-180"
+                      )} />
+                    </button>
+                    <div className={cn(
+                      "overflow-hidden transition-all duration-300",
+                      expandedSection === "description" ? "max-h-[500px] pb-4" : "max-h-0"
+                    )}>
+                      <div className="text-sm space-y-1">
+                        {formatDescription(product.description || "No description available.")}
+                      </div>
                     </div>
-                  ))}
+                  </div>
+                </div>
+
+                {/* Pros and Cons - Always Open */}
+                <div className="border-b border-border py-4">
+                  <h3 className="font-medium mb-4">Pros & Cons</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 text-success font-medium mb-2">
+                        <ThumbsUp className="w-4 h-4" />
+                        Pros
+                      </div>
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex items-start gap-2">
+                          <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                          <span>High-quality materials</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                          <span>Perfect fit guarantee</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                          <span>Easy to install</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 text-muted-foreground font-medium mb-2">
+                        <ThumbsDown className="w-4 h-4" />
+                        Cons
+                      </div>
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex items-start gap-2">
+                          <X className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                          <span>May require break-in period</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Product Specifications Accordion */}
+                <div className="border-b border-border">
+                  <button
+                    className="flex items-center justify-between w-full py-4 font-medium"
+                    onClick={() => setExpandedSection(expandedSection === "specs" ? null : "specs")}
+                  >
+                    Product Specifications
+                    <ChevronDown className={cn(
+                      "w-4 h-4 transition-transform",
+                      expandedSection === "specs" && "rotate-180"
+                    )} />
+                  </button>
+                  <div className={cn(
+                    "overflow-hidden transition-all duration-300",
+                    expandedSection === "specs" ? "max-h-[500px] pb-4" : "max-h-0"
+                  )}>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between py-2 border-b border-border/50">
+                        <span className="text-muted-foreground">Material</span>
+                        <span className="font-medium">
+                          {product.title.toLowerCase().includes('leather') ? 'Genuine Leather' :
+                           product.title.toLowerCase().includes('silicone') ? 'Premium Silicone' :
+                           product.title.toLowerCase().includes('metal') ? 'Stainless Steel' :
+                           product.title.toLowerCase().includes('nylon') ? 'Woven Nylon' :
+                           'Premium Quality'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-border/50">
+                        <span className="text-muted-foreground">Compatibility</span>
+                        <span className="font-medium">
+                          {product.title.toLowerCase().includes('apple') ? 'Apple Watch' :
+                           product.title.toLowerCase().includes('samsung') ? 'Samsung Galaxy' :
+                           'Universal'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-border/50">
+                        <span className="text-muted-foreground">Closure Type</span>
+                        <span className="font-medium">Pin & Tuck</span>
+                      </div>
+                      <div className="flex justify-between py-2">
+                        <span className="text-muted-foreground">Water Resistant</span>
+                        <span className="font-medium">
+                          {product.title.toLowerCase().includes('leather') ? 'Splash Resistant' : 'Yes'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delivery & Returns Accordion */}
+                <div className="border-b border-border">
+                  <button
+                    className="flex items-center justify-between w-full py-4 font-medium"
+                    onClick={() => setExpandedSection(expandedSection === "shipping" ? null : "shipping")}
+                  >
+                    Delivery & Returns
+                    <ChevronDown className={cn(
+                      "w-4 h-4 transition-transform",
+                      expandedSection === "shipping" && "rotate-180"
+                    )} />
+                  </button>
+                  <div className={cn(
+                    "overflow-hidden transition-all duration-300",
+                    expandedSection === "shipping" ? "max-h-[500px] pb-4" : "max-h-0"
+                  )}>
+                    <div className="space-y-3 text-sm text-muted-foreground">
+                      <p><strong className="text-foreground">Free UK Shipping:</strong> On orders over £25</p>
+                      <p><strong className="text-foreground">Standard Delivery:</strong> 2-5 working days</p>
+                      <p><strong className="text-foreground">Same-Day Dispatch:</strong> Order before 9pm</p>
+                      <p><strong className="text-foreground">Returns:</strong> 100-day hassle-free returns</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -298,16 +596,18 @@ const Product = () => {
                   {relatedProducts
                     .filter(p => p.node.handle !== id)
                     .slice(0, 4)
-                    .map((product) => (
+                    .map((relatedProduct) => (
                       <ShopifyProductCard
-                        key={product.node.id}
-                        product={product}
+                        key={relatedProduct.node.id}
+                        product={relatedProduct}
                       />
                     ))}
                 </div>
               </section>
             )}
           </div>
+
+          <TrustGuaranteeSection />
         </main>
 
         <Footer />
@@ -316,17 +616,22 @@ const Product = () => {
         <div className="sticky-atc">
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <p className="font-semibold">{formatPrice(price)}</p>
+              <p className={cn("font-semibold", discount > 0 && "text-success")}>
+                {formatPrice(price)}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {selectedVariant?.title !== "Default Title" ? selectedVariant?.title : ""}
               </p>
             </div>
             <Button 
-              className="flex-1" 
+              className={cn(
+                "flex-1",
+                isInStock ? "bg-success hover:bg-success/90" : "bg-muted"
+              )}
               onClick={handleAddToCart}
-              disabled={!selectedVariant?.availableForSale}
+              disabled={!isInStock}
             >
-              Add to Cart
+              {isInStock ? "Add to Cart" : "Out of Stock"}
             </Button>
           </div>
         </div>
