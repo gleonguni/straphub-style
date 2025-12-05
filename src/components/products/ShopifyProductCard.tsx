@@ -63,7 +63,7 @@ export function ShopifyProductCard({ product }: ShopifyProductCardProps) {
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1">
           {discount > 0 && (
-            <span className="badge-sale">-{discount}%</span>
+            <span className="badge-sale">Save {discount}%</span>
           )}
         </div>
 
@@ -80,7 +80,7 @@ export function ShopifyProductCard({ product }: ShopifyProductCardProps) {
       {/* Quick Add Button */}
       <button 
         onClick={handleQuickAdd}
-        className="quick-add bg-primary text-primary-foreground py-3 flex items-center justify-center gap-2 text-sm font-medium hover:bg-primary/90 transition-colors"
+        className="quick-add bg-success text-success-foreground py-3 flex items-center justify-center gap-2 text-sm font-medium hover:bg-success/90 transition-colors"
       >
         <Plus className="w-4 h-4" />
         Quick Add
@@ -99,7 +99,7 @@ export function ShopifyProductCard({ product }: ShopifyProductCardProps) {
         <div className="mt-2 flex items-center gap-2">
           <span className={cn(
             "font-semibold",
-            discount > 0 && "text-sale"
+            discount > 0 && "text-success"
           )}>
             {formatPrice(node.priceRange.minVariantPrice.amount, node.priceRange.minVariantPrice.currencyCode)}
           </span>

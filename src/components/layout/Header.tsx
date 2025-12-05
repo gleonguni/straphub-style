@@ -1,21 +1,21 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Search, ShoppingBag, Menu, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Search, ShoppingBag, Menu, X, ChevronDown, ChevronRight, Watch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const watchBrands = [
-  { name: "Apple Watch", href: "/collections/apple-watch", image: "🍎" },
-  { name: "Samsung", href: "/collections/samsung", image: "📱" },
-  { name: "Garmin", href: "/collections/garmin", image: "⌚" },
-  { name: "Fitbit", href: "/collections/fitbit", image: "💪" },
-  { name: "Huawei", href: "/collections/huawei", image: "📲" },
-  { name: "Xiaomi", href: "/collections/xiaomi", image: "🎯" },
-  { name: "Amazfit", href: "/collections/amazfit", image: "⚡" },
-  { name: "Google Pixel", href: "/collections/google", image: "🔍" },
-  { name: "Polar", href: "/collections/polar", image: "❄️" },
-  { name: "Fossil", href: "/collections/fossil", image: "🦴" },
-  { name: "Universal", href: "/collections/universal", image: "🔗" },
+  { name: "Apple Watch", href: "/collections/apple-watch", searchQuery: "apple" },
+  { name: "Samsung", href: "/collections/samsung", searchQuery: "samsung" },
+  { name: "Garmin", href: "/collections/garmin", searchQuery: "garmin" },
+  { name: "Fitbit", href: "/collections/fitbit", searchQuery: "fitbit" },
+  { name: "Huawei", href: "/collections/huawei", searchQuery: "huawei" },
+  { name: "Xiaomi", href: "/collections/xiaomi", searchQuery: "xiaomi" },
+  { name: "Amazfit", href: "/collections/amazfit", searchQuery: "amazfit" },
+  { name: "Google Pixel", href: "/collections/google", searchQuery: "google" },
+  { name: "Polar", href: "/collections/polar", searchQuery: "polar" },
+  { name: "Fossil", href: "/collections/fossil", searchQuery: "fossil" },
+  { name: "Universal", href: "/collections/universal", searchQuery: "universal" },
 ];
 
 const strapTypes = [
@@ -26,6 +26,12 @@ const strapTypes = [
   { name: "Milanese", href: "/collections/milanese" },
 ];
 
+const accessoryBrands = [
+  { name: "Apple Watch", href: "/collections/accessories-apple" },
+  { name: "Samsung", href: "/collections/accessories-samsung" },
+  { name: "Universal", href: "/collections/accessories-universal" },
+];
+
 interface HeaderProps {
   cartCount?: number;
   onCartClick?: () => void;
@@ -34,10 +40,40 @@ interface HeaderProps {
 export function Header({ cartCount = 0, onCartClick }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
+  const [isAccessoriesOpen, setIsAccessoriesOpen] = useState(false);
   const [expandedMobileSection, setExpandedMobileSection] = useState<string | null>(null);
+  
+  const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const accessoriesTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMegaMenuEnter = () => {
+    if (megaMenuTimeoutRef.current) {
+      clearTimeout(megaMenuTimeoutRef.current);
+    }
+    setIsMegaMenuOpen(true);
+  };
+
+  const handleMegaMenuLeave = () => {
+    megaMenuTimeoutRef.current = setTimeout(() => {
+      setIsMegaMenuOpen(false);
+    }, 150);
+  };
+
+  const handleAccessoriesEnter = () => {
+    if (accessoriesTimeoutRef.current) {
+      clearTimeout(accessoriesTimeoutRef.current);
+    }
+    setIsAccessoriesOpen(true);
+  };
+
+  const handleAccessoriesLeave = () => {
+    accessoriesTimeoutRef.current = setTimeout(() => {
+      setIsAccessoriesOpen(false);
+    }, 150);
+  };
 
   return (
-    <header className="sticky top-0 z-40 bg-background border-b border-border">
+    <header className="sticky top-0 z-40 bg-header border-b border-border">
       <div className="container">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Mobile Menu Button */}
@@ -73,21 +109,131 @@ export function Header({ cartCount = 0, onCartClick }: HeaderProps) {
             {/* All Straps Dropdown Trigger */}
             <div 
               className="relative"
-              onMouseEnter={() => setIsMegaMenuOpen(true)}
-              onMouseLeave={() => setIsMegaMenuOpen(false)}
+              onMouseEnter={handleMegaMenuEnter}
+              onMouseLeave={handleMegaMenuLeave}
             >
-              <button className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors">
+              <button className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors py-4">
                 All Straps
                 <ChevronDown className={cn("w-4 h-4 transition-transform", isMegaMenuOpen && "rotate-180")} />
               </button>
+              
+              {/* Mega Menu - Positioned relative to trigger */}
+              <div 
+                className={cn(
+                  "absolute left-1/2 -translate-x-1/2 top-full w-[800px] bg-background shadow-lg border border-border rounded-lg z-50 transition-all duration-200",
+                  isMegaMenuOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+                )}
+              >
+                <div className="p-6">
+                  <div className="grid grid-cols-3 gap-8">
+                    {/* Shop by Brand */}
+                    <div className="col-span-2">
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                        Shop by Brand
+                      </h3>
+                      <div className="grid grid-cols-3 gap-2">
+                        {watchBrands.map((brand) => (
+                          <Link
+                            key={brand.name}
+                            to={brand.href}
+                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors"
+                            onClick={() => setIsMegaMenuOpen(false)}
+                          >
+                            <Watch className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">{brand.name}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Shop by Material */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                        Shop by Material
+                      </h3>
+                      <div className="space-y-1">
+                        {strapTypes.map((type) => (
+                          <Link
+                            key={type.name}
+                            to={type.href}
+                            className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+                            onClick={() => setIsMegaMenuOpen(false)}
+                          >
+                            {type.name}
+                          </Link>
+                        ))}
+                      </div>
+                      
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 mt-6">
+                        Featured
+                      </h3>
+                      <div className="space-y-1">
+                        <Link 
+                          to="/collections/new-arrivals" 
+                          className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+                          onClick={() => setIsMegaMenuOpen(false)}
+                        >
+                          New Arrivals
+                        </Link>
+                        <Link 
+                          to="/collections/bestsellers" 
+                          className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+                          onClick={() => setIsMegaMenuOpen(false)}
+                        >
+                          Best Sellers
+                        </Link>
+                        <Link 
+                          to="/collections/sale" 
+                          className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium text-sale"
+                          onClick={() => setIsMegaMenuOpen(false)}
+                        >
+                          Sale Items
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <Link 
-              to="/collections/accessories" 
-              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+            {/* Accessories Dropdown */}
+            <div 
+              className="relative"
+              onMouseEnter={handleAccessoriesEnter}
+              onMouseLeave={handleAccessoriesLeave}
             >
-              Accessories
-            </Link>
+              <button className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors py-4">
+                Accessories
+                <ChevronDown className={cn("w-4 h-4 transition-transform", isAccessoriesOpen && "rotate-180")} />
+              </button>
+              
+              <div 
+                className={cn(
+                  "absolute left-1/2 -translate-x-1/2 top-full w-[200px] bg-background shadow-lg border border-border rounded-lg z-50 transition-all duration-200",
+                  isAccessoriesOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+                )}
+              >
+                <div className="p-3 space-y-1">
+                  <Link 
+                    to="/collections/accessories" 
+                    className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+                    onClick={() => setIsAccessoriesOpen(false)}
+                  >
+                    All Accessories
+                  </Link>
+                  {accessoryBrands.map((brand) => (
+                    <Link
+                      key={brand.name}
+                      to={brand.href}
+                      className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+                      onClick={() => setIsAccessoriesOpen(false)}
+                    >
+                      {brand.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
             
             <Link 
               to="/contact" 
@@ -115,89 +261,6 @@ export function Header({ cartCount = 0, onCartClick }: HeaderProps) {
                 </span>
               )}
             </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mega Menu - Full Width Dropdown */}
-      <div 
-        className={cn(
-          "absolute left-0 right-0 top-full bg-background shadow-lg border-t border-border z-50 transition-all duration-200 hidden md:block",
-          isMegaMenuOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
-        )}
-        onMouseEnter={() => setIsMegaMenuOpen(true)}
-        onMouseLeave={() => setIsMegaMenuOpen(false)}
-      >
-        <div className="container py-8">
-          <div className="grid grid-cols-4 gap-8">
-            {/* Shop by Brand */}
-            <div className="col-span-2">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                Shop by Brand
-              </h3>
-              <div className="grid grid-cols-3 gap-3">
-                {watchBrands.map((brand) => (
-                  <Link
-                    key={brand.name}
-                    to={brand.href}
-                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors"
-                    onClick={() => setIsMegaMenuOpen(false)}
-                  >
-                    <span className="text-lg">{brand.image}</span>
-                    <span className="text-sm font-medium">{brand.name}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-            
-            {/* Shop by Material */}
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                Shop by Material
-              </h3>
-              <div className="space-y-2">
-                {strapTypes.map((type) => (
-                  <Link
-                    key={type.name}
-                    to={type.href}
-                    className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
-                    onClick={() => setIsMegaMenuOpen(false)}
-                  >
-                    {type.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-            
-            {/* Featured */}
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                Featured
-              </h3>
-              <div className="space-y-2">
-                <Link 
-                  to="/collections/new-arrivals" 
-                  className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
-                  onClick={() => setIsMegaMenuOpen(false)}
-                >
-                  New Arrivals
-                </Link>
-                <Link 
-                  to="/collections/bestsellers" 
-                  className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
-                  onClick={() => setIsMegaMenuOpen(false)}
-                >
-                  Best Sellers
-                </Link>
-                <Link 
-                  to="/collections/sale" 
-                  className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium text-sale"
-                  onClick={() => setIsMegaMenuOpen(false)}
-                >
-                  Sale Items
-                </Link>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -248,7 +311,7 @@ export function Header({ cartCount = 0, onCartClick }: HeaderProps) {
                     className="flex items-center gap-2 py-2 text-sm"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <span>{brand.image}</span>
+                    <Watch className="w-4 h-4 text-muted-foreground" />
                     {brand.name}
                   </Link>
                 ))}
@@ -267,13 +330,40 @@ export function Header({ cartCount = 0, onCartClick }: HeaderProps) {
             )}
           </div>
 
-          <Link 
-            to="/collections/accessories" 
-            className="block py-3 text-lg font-medium border-b border-border"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Accessories
-          </Link>
+          {/* Accessories Accordion */}
+          <div className="border-b border-border">
+            <button
+              className="flex items-center justify-between w-full py-3 text-lg font-medium"
+              onClick={() => setExpandedMobileSection(expandedMobileSection === "accessories" ? null : "accessories")}
+            >
+              Accessories
+              <ChevronRight className={cn(
+                "w-5 h-5 transition-transform",
+                expandedMobileSection === "accessories" && "rotate-90"
+              )} />
+            </button>
+            {expandedMobileSection === "accessories" && (
+              <div className="pb-4 pl-4 space-y-2 animate-fade-in">
+                <Link
+                  to="/collections/accessories"
+                  className="block py-2 text-sm"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  All Accessories
+                </Link>
+                {accessoryBrands.map((brand) => (
+                  <Link
+                    key={brand.name}
+                    to={brand.href}
+                    className="block py-2 text-sm"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {brand.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
 
           <Link 
             to="/contact" 

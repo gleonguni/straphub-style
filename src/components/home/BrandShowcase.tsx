@@ -1,18 +1,19 @@
 import { Link } from "react-router-dom";
+import { Watch } from "lucide-react";
 
 const brands = [
-  { name: "Apple Watch", href: "/collections/apple-watch", emoji: "🍎" },
-  { name: "Samsung", href: "/collections/samsung", emoji: "📱" },
-  { name: "Garmin", href: "/collections/garmin", emoji: "⌚" },
-  { name: "Fitbit", href: "/collections/fitbit", emoji: "💪" },
-  { name: "Huawei", href: "/collections/huawei", emoji: "📲" },
-  { name: "Xiaomi", href: "/collections/xiaomi", emoji: "🎯" },
-  { name: "Amazfit", href: "/collections/amazfit", emoji: "⚡" },
-  { name: "Google", href: "/collections/google", emoji: "🔍" },
-  { name: "Polar", href: "/collections/polar", emoji: "❄️" },
-  { name: "Fossil", href: "/collections/fossil", emoji: "🦴" },
-  { name: "TomTom", href: "/collections/tomtom", emoji: "🗺️" },
-  { name: "Universal", href: "/collections/universal", emoji: "🔗" },
+  { name: "Apple Watch", href: "/collections/apple-watch" },
+  { name: "Samsung", href: "/collections/samsung" },
+  { name: "Garmin", href: "/collections/garmin" },
+  { name: "Fitbit", href: "/collections/fitbit" },
+  { name: "Huawei", href: "/collections/huawei" },
+  { name: "Xiaomi", href: "/collections/xiaomi" },
+  { name: "Amazfit", href: "/collections/amazfit" },
+  { name: "Google", href: "/collections/google" },
+  { name: "Polar", href: "/collections/polar" },
+  { name: "Fossil", href: "/collections/fossil" },
+  { name: "TomTom", href: "/collections/tomtom" },
+  { name: "Universal", href: "/collections/universal" },
 ];
 
 export function BrandShowcase() {
@@ -29,9 +30,9 @@ export function BrandShowcase() {
               to={brand.href}
               className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors group"
             >
-              <span className="text-2xl md:text-3xl group-hover:scale-110 transition-transform">
-                {brand.emoji}
-              </span>
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <Watch className="w-6 h-6 md:w-7 md:h-7 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
               <span className="text-xs md:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                 {brand.name}
               </span>

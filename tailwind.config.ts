@@ -54,6 +54,10 @@ export default {
           DEFAULT: "hsl(var(--sale))",
           foreground: "hsl(var(--sale-foreground))",
         },
+        header: {
+          DEFAULT: "hsl(var(--header))",
+          foreground: "hsl(var(--header-foreground))",
+        },
         announcement: {
           DEFAULT: "hsl(var(--announcement))",
           foreground: "hsl(var(--announcement-foreground))",
