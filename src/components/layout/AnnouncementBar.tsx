@@ -2,8 +2,8 @@ import { Truck, RefreshCw, Zap, Check } from "lucide-react";
 
 const announcements = [
   { icon: Truck, text: "Free shipping on orders above £25" },
-  { icon: Zap, text: "Same day shipping (order before 9pm)" },
-  { icon: RefreshCw, text: "100-day return policy" },
+  { icon: Zap, text: "Same day shipping (order before 8pm)" },
+  { icon: RefreshCw, text: "30-day return policy" },
   { icon: Check, text: "Free shipping on orders above £25" },
 ];
 

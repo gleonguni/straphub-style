@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Truck, RefreshCw, Shield, ChevronDown, ChevronLeft, ChevronRight, Loader2, Check, X, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Truck, RefreshCw, Shield, ChevronDown, ChevronLeft, ChevronRight, Loader2, Check, X, ThumbsUp, ThumbsDown, Clock, Leaf, Package } from "lucide-react";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/layout/CartDrawer";
-import { ShopifyProductCard } from "@/components/products/ShopifyProductCard";
 import { TrustGuaranteeSection } from "@/components/home/TrustGuaranteeSection";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -14,6 +13,37 @@ import { useShopifyProduct, useShopifyProducts } from "@/hooks/useShopifyProduct
 import { useCartStore } from "@/stores/cartStore";
 import { formatPrice, calculateDiscount, CartItem } from "@/lib/shopify";
 import { toast } from "sonner";
+
+// Countdown timer hook
+function useCountdown() {
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const cutoff = new Date();
+      cutoff.setHours(20, 0, 0, 0); // 8pm cutoff
+
+      // If past 8pm, set cutoff to next day
+      if (now > cutoff) {
+        cutoff.setDate(cutoff.getDate() + 1);
+      }
+
+      const diff = cutoff.getTime() - now.getTime();
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      return { hours, minutes, seconds };
+    };
+
+    setTimeLeft(calculateTimeLeft());
+    const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return timeLeft;
+}
 
 const Product = () => {
   const { id } = useParams();
@@ -27,27 +57,26 @@ const Product = () => {
   const { data: relatedProducts } = useShopifyProducts(8);
   const { addItem } = useCartStore();
   const totalItems = useCartStore((state) => state.getTotalItems());
+  const countdown = useCountdown();
 
   // Get the selected variant
   const selectedVariant = product?.variants.edges[selectedVariantIndex]?.node;
 
-  // Filter images to only show images related to selected variant
+  // Filter images to ONLY show selected variant image
   const filteredImages = useMemo(() => {
     if (!product) return [];
     
-    const allImages = product.images.edges;
-    
-    // If variant has a specific image, prioritize it
+    // If variant has a specific image, ONLY show that image
     if (selectedVariant?.image?.url) {
       const variantImageUrl = selectedVariant.image.url;
-      const variantImage = allImages.find(img => img.node.url === variantImageUrl);
+      const variantImage = product.images.edges.find(img => img.node.url === variantImageUrl);
       if (variantImage) {
-        // Return variant image first, then others that aren't variant-specific
-        return [variantImage, ...allImages.filter(img => img.node.url !== variantImageUrl)];
+        return [variantImage];
       }
     }
     
-    return allImages;
+    // Fallback to first image only if no variant image
+    return product.images.edges.length > 0 ? [product.images.edges[0]] : [];
   }, [product, selectedVariant]);
 
   // Reset image selection when variant changes
@@ -148,28 +177,55 @@ const Product = () => {
     return variant?.node.image?.url;
   };
 
-  // Parse description to preserve formatting
+  // Parse description to preserve formatting with proper HTML parsing
   const formatDescription = (description: string) => {
     if (!description) return null;
     
-    // Split by line breaks and process
+    // Check if description contains HTML tags
+    const hasHtml = /<[^>]+>/.test(description);
+    
+    if (hasHtml) {
+      // Return formatted HTML with proper styling
+      return (
+        <div 
+          className="prose prose-sm max-w-none text-muted-foreground
+            [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-foreground [&_h1]:mt-4 [&_h1]:mb-2
+            [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-4 [&_h2]:mb-2
+            [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-3 [&_h3]:mb-2
+            [&_h4]:text-sm [&_h4]:font-semibold [&_h4]:text-foreground [&_h4]:mt-3 [&_h4]:mb-1
+            [&_p]:mb-3 [&_p]:leading-relaxed
+            [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ul]:space-y-1
+            [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_ol]:space-y-1
+            [&_li]:text-muted-foreground
+            [&_strong]:text-foreground [&_strong]:font-semibold
+            [&_br]:block [&_br]:mb-2"
+          dangerouslySetInnerHTML={{ __html: description }}
+        />
+      );
+    }
+    
+    // Plain text fallback - split by line breaks and process
     const lines = description.split(/\n+/).filter(line => line.trim());
     
-    return lines.map((line, index) => {
-      const trimmed = line.trim();
-      
-      // Check if it looks like a heading (short, ends with colon, or all caps)
-      if (trimmed.length < 50 && (trimmed.endsWith(':') || trimmed === trimmed.toUpperCase())) {
-        return <h4 key={index} className="font-semibold text-foreground mt-4 mb-2">{trimmed}</h4>;
-      }
-      
-      // Check if it's a bullet point
-      if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
-        return <li key={index} className="ml-4 text-muted-foreground">{trimmed.substring(1).trim()}</li>;
-      }
-      
-      return <p key={index} className="text-muted-foreground mb-2">{trimmed}</p>;
-    });
+    return (
+      <div className="space-y-3">
+        {lines.map((line, index) => {
+          const trimmed = line.trim();
+          
+          // Check if it looks like a heading (short, ends with colon, or all caps)
+          if (trimmed.length < 50 && (trimmed.endsWith(':') || trimmed === trimmed.toUpperCase())) {
+            return <h4 key={index} className="font-semibold text-foreground mt-4 mb-2">{trimmed}</h4>;
+          }
+          
+          // Check if it's a bullet point
+          if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
+            return <li key={index} className="ml-4 text-muted-foreground list-disc">{trimmed.substring(1).trim()}</li>;
+          }
+          
+          return <p key={index} className="text-muted-foreground leading-relaxed">{trimmed}</p>;
+        })}
+      </div>
+    );
   };
 
   // Mobile carousel navigation
@@ -183,6 +239,27 @@ const Product = () => {
 
   // Get main product image for compatibility badge
   const mainProductImage = filteredImages[0]?.node.url || '/placeholder.svg';
+
+  // Handle quick add for related products
+  const handleQuickAdd = (relatedProduct: typeof relatedProducts[0]) => {
+    const firstVariant = relatedProduct.node.variants.edges[0]?.node;
+    if (!firstVariant) return;
+
+    const cartItem: CartItem = {
+      product: relatedProduct,
+      variantId: firstVariant.id,
+      variantTitle: firstVariant.title,
+      price: firstVariant.price,
+      quantity: 1,
+      selectedOptions: firstVariant.selectedOptions,
+    };
+
+    addItem(cartItem);
+    toast.success("Added to cart", {
+      description: relatedProduct.node.title,
+      position: "top-center",
+    });
+  };
 
   return (
     <>
@@ -413,7 +490,7 @@ const Product = () => {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">This product is compatible with</p>
-                    <p className="text-sm font-medium">
+                    <p className="text-sm font-medium text-success">
                       {product.title.toLowerCase().includes('apple') ? 'Apple Watch' : 
                        product.title.toLowerCase().includes('samsung') ? 'Samsung Galaxy Watch' :
                        product.title.toLowerCase().includes('garmin') ? 'Garmin Watches' :
@@ -422,15 +499,36 @@ const Product = () => {
                   </div>
                 </div>
 
-                {/* Promotional Box */}
-                <div className="bg-sale/10 border border-sale/30 rounded-lg p-4 mb-6">
-                  <div className="flex items-center gap-2 text-sale font-semibold mb-1">
-                    <Truck className="w-4 h-4" />
-                    Same-Day Dispatch
+                {/* Promotional Box with Countdown */}
+                <div className="bg-sale/15 border border-sale/40 rounded-lg p-4 mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 text-sale font-semibold">
+                      <Clock className="w-4 h-4" />
+                      Same day shipping?
+                    </div>
+                    <div className="flex items-center gap-1 bg-background rounded px-2 py-1">
+                      <span className="font-mono text-sm font-bold">{String(countdown.hours).padStart(2, '0')}</span>
+                      <span className="text-muted-foreground">:</span>
+                      <span className="font-mono text-sm font-bold">{String(countdown.minutes).padStart(2, '0')}</span>
+                      <span className="text-muted-foreground">:</span>
+                      <span className="font-mono text-sm font-bold">{String(countdown.seconds).padStart(2, '0')}</span>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Order before 9pm for same-day dispatch. Free UK shipping on orders over £25.
-                  </p>
+                  <p className="text-sm text-foreground mb-1">Order within the countdown for same-day dispatch!</p>
+                  <div className="space-y-2 mt-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Truck className="w-4 h-4 text-success" />
+                      <span>Free shipping on orders over £25</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <RefreshCw className="w-4 h-4 text-success" />
+                      <span>30-day return policy, free exchanges</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Leaf className="w-4 h-4 text-success" />
+                      <span>100% sustainable delivery using letterbox parcel</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Trust Icons */}
@@ -441,7 +539,7 @@ const Product = () => {
                   </div>
                   <div className="text-center">
                     <RefreshCw className="w-5 h-5 mx-auto mb-1 text-success" />
-                    <p className="text-xs">100-Day Returns</p>
+                    <p className="text-xs">30-Day Returns</p>
                   </div>
                   <div className="text-center">
                     <Shield className="w-5 h-5 mx-auto mb-1 text-success" />
@@ -464,9 +562,9 @@ const Product = () => {
                     </button>
                     <div className={cn(
                       "overflow-hidden transition-all duration-300",
-                      expandedSection === "description" ? "max-h-[500px] pb-4" : "max-h-0"
+                      expandedSection === "description" ? "max-h-[800px] pb-4" : "max-h-0"
                     )}>
-                      <div className="text-sm space-y-1">
+                      <div className="text-sm">
                         {formatDescription(product.description || "No description available.")}
                       </div>
                     </div>
@@ -476,38 +574,30 @@ const Product = () => {
                 {/* Pros and Cons - Always Open */}
                 <div className="border-b border-border py-4">
                   <h3 className="font-medium mb-4">Pros & Cons</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 text-success font-medium mb-2">
-                        <ThumbsUp className="w-4 h-4" />
-                        Pros
-                      </div>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-start gap-2">
-                          <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                          <span>High-quality materials</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                          <span>Perfect fit guarantee</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                          <span>Easy to install</span>
-                        </li>
-                      </ul>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 text-success" />
+                      </span>
+                      <span className="text-sm">High-quality materials for lasting durability</span>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 text-muted-foreground font-medium mb-2">
-                        <ThumbsDown className="w-4 h-4" />
-                        Cons
-                      </div>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-start gap-2">
-                          <X className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                          <span>May require break-in period</span>
-                        </li>
-                      </ul>
+                    <div className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 text-success" />
+                      </span>
+                      <span className="text-sm">Perfect fit guarantee with easy installation</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 text-success" />
+                      </span>
+                      <span className="text-sm">Comfortable for all-day wear</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <X className="w-3 h-3 text-destructive" />
+                      </span>
+                      <span className="text-sm">May require break-in period for optimal comfort</span>
                     </div>
                   </div>
                 </div>
@@ -580,31 +670,68 @@ const Product = () => {
                     <div className="space-y-3 text-sm text-muted-foreground">
                       <p><strong className="text-foreground">Free UK Shipping:</strong> On orders over £25</p>
                       <p><strong className="text-foreground">Standard Delivery:</strong> 2-5 working days</p>
-                      <p><strong className="text-foreground">Same-Day Dispatch:</strong> Order before 9pm</p>
-                      <p><strong className="text-foreground">Returns:</strong> 100-day hassle-free returns</p>
+                      <p><strong className="text-foreground">Same-Day Dispatch:</strong> Order before 8pm</p>
+                      <p><strong className="text-foreground">Returns:</strong> 30-day hassle-free returns</p>
                     </div>
                   </div>
                 </div>
+
+                {/* You May Also Like - Horizontal Cards */}
+                {relatedProducts && relatedProducts.length > 0 && (
+                  <div className="mt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-medium">You might also like:</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {relatedProducts
+                        .filter(p => p.node.handle !== id)
+                        .slice(0, 2)
+                        .map((relatedProduct) => {
+                          const relatedPrice = relatedProduct.node.priceRange.minVariantPrice.amount;
+                          const relatedCompareAt = relatedProduct.node.variants.edges[0]?.node.compareAtPrice?.amount;
+                          const relatedDiscount = calculateDiscount(relatedPrice, relatedCompareAt);
+                          
+                          return (
+                            <div key={relatedProduct.node.id} className="flex gap-3 p-2 border border-border rounded-lg">
+                              <Link to={`/products/${relatedProduct.node.handle}`} className="w-16 h-16 flex-shrink-0">
+                                <img 
+                                  src={relatedProduct.node.images.edges[0]?.node.url || '/placeholder.svg'} 
+                                  alt={relatedProduct.node.title}
+                                  className="w-full h-full object-cover rounded"
+                                />
+                              </Link>
+                              <div className="flex-1 min-w-0">
+                                <Link to={`/products/${relatedProduct.node.handle}`}>
+                                  <p className="text-sm font-medium truncate hover:text-primary">
+                                    {relatedProduct.node.title}
+                                  </p>
+                                </Link>
+                                <div className="flex items-center gap-2">
+                                  <span className={cn("text-sm font-semibold", relatedDiscount > 0 && "text-success")}>
+                                    {formatPrice(relatedPrice)}
+                                  </span>
+                                  {relatedCompareAt && parseFloat(relatedCompareAt) > parseFloat(relatedPrice) && (
+                                    <span className="text-xs text-muted-foreground line-through">
+                                      {formatPrice(relatedCompareAt)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <Button 
+                                size="sm" 
+                                className="bg-success hover:bg-success/90 flex-shrink-0 self-center"
+                                onClick={() => handleQuickAdd(relatedProduct)}
+                              >
+                                Add to order
+                              </Button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Related Products */}
-            {relatedProducts && relatedProducts.length > 0 && (
-              <section className="mt-16">
-                <h2 className="text-2xl font-bold mb-6">You may also like</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                  {relatedProducts
-                    .filter(p => p.node.handle !== id)
-                    .slice(0, 4)
-                    .map((relatedProduct) => (
-                      <ShopifyProductCard
-                        key={relatedProduct.node.id}
-                        product={relatedProduct}
-                      />
-                    ))}
-                </div>
-              </section>
-            )}
           </div>
 
           <TrustGuaranteeSection />
