@@ -27,7 +27,7 @@ export function HeroSection() {
           animationDelay: "0.2s"
         }}>
             <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Link to="/collections/all">Shop All Strap Brands </Link>
+              <Link to="/collections/all">Shop All Straps  </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="border-background/30 bg-background/10 text-background hover:bg-background/20 backdrop-blur-sm">
               <Link to="/collections/apple-watch">Apple Watch</Link>
