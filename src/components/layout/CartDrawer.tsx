@@ -21,27 +21,18 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const currencyCode = items[0]?.price.currencyCode || 'GBP';
 
   const handleCheckout = async () => {
-    // Open blank window immediately to avoid popup blockers
-    const checkoutWindow = window.open('about:blank', '_blank');
-    
     try {
       const checkoutUrl = await createCheckout();
-      if (checkoutUrl && checkoutWindow) {
-        checkoutWindow.location.href = checkoutUrl;
-        toast.success("Redirecting to checkout...");
-        onClose();
-      } else if (checkoutUrl) {
-        // Fallback if popup was blocked
+      if (checkoutUrl) {
+        // Use window.location.href for reliable redirect in all contexts
         window.location.href = checkoutUrl;
       } else {
-        checkoutWindow?.close();
         toast.error("Failed to create checkout", {
           description: "Please try again or contact support.",
         });
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      checkoutWindow?.close();
       toast.error("Checkout failed", {
         description: error instanceof Error ? error.message : "Please try again.",
       });
