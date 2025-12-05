@@ -46,14 +46,14 @@ const collections = [
 ];
 export function FeaturedCollections() {
   return (
-    <section className="py-14 md:py-20">
-      <div className="container">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-bold mb-3">Find the best strap for you </h2>
-          <p className="text-muted-foreground">Browse by brand or material</p>
+    <section className="py-12 md:py-20 overflow-hidden">
+      <div className="container px-4">
+        <div className="text-center mb-8 md:mb-10">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2 md:mb-3">Find the best strap for you</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Browse by brand or material</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
           {collections.map((collection, index) => (
             <Link
               key={collection.name}
@@ -72,12 +72,12 @@ export function FeaturedCollections() {
                 className={`absolute inset-0 bg-gradient-to-t ${collection.color} opacity-70 group-hover:opacity-60 transition-opacity`}
               />
 
-              <div className="absolute inset-0 p-4 md:p-6 flex flex-col justify-end text-background">
-                <h3 className="font-bold text-lg md:text-xl mb-1 group-hover:translate-x-1 transition-transform">
+              <div className="absolute inset-0 p-3 md:p-6 flex flex-col justify-end text-background">
+                <h3 className="font-bold text-sm md:text-xl mb-0.5 md:mb-1 group-hover:translate-x-1 transition-transform">
                   {collection.name}
                 </h3>
-                <p className="text-sm text-background/80 mb-2">{collection.description}</p>
-                <span className="inline-flex items-center gap-1 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                <p className="text-xs md:text-sm text-background/80 mb-1 md:mb-2 line-clamp-1">{collection.description}</p>
+                <span className="hidden md:inline-flex items-center gap-1 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                   Shop Now <ArrowRight className="w-4 h-4" />
                 </span>
               </div>

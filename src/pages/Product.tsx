@@ -268,25 +268,25 @@ const Product = () => {
         <meta name="description" content={`${product.title} - ${formatPrice(price)}. ${product.description?.slice(0, 150) || ""}...`} />
       </Helmet>
 
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col overflow-x-hidden w-full max-w-full">
         <AnnouncementBar />
         <Header cartCount={totalItems} onCartClick={() => setIsCartOpen(true)} />
 
-        <main className="flex-1">
+        <main className="flex-1 overflow-x-hidden">
           {/* Breadcrumbs */}
-          <div className="container py-4">
-            <nav className="text-sm text-muted-foreground">
-              <Link to="/" className="hover:text-foreground">Home</Link>
+          <div className="container py-4 overflow-hidden">
+            <nav className="text-sm text-muted-foreground flex flex-wrap items-center">
+              <Link to="/" className="hover:text-foreground whitespace-nowrap">Home</Link>
               <span className="mx-2">/</span>
-              <Link to="/collections/all" className="hover:text-foreground">All Straps</Link>
+              <Link to="/collections/all" className="hover:text-foreground whitespace-nowrap">All Straps</Link>
               <span className="mx-2">/</span>
-              <span className="text-foreground">{product.title}</span>
+              <span className="text-foreground truncate max-w-[150px] md:max-w-none">{product.title}</span>
             </nav>
           </div>
 
           {/* Product Details */}
-          <div className="container pb-16">
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          <div className="container pb-16 overflow-hidden">
+            <div className="grid lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12">
               {/* Image Gallery */}
               <div className="space-y-4">
                 {/* Mobile Carousel */}
@@ -359,23 +359,23 @@ const Product = () => {
               </div>
 
               {/* Product Info */}
-              <div className="lg:sticky lg:top-24 lg:self-start">
+              <div className="lg:sticky lg:top-24 lg:self-start overflow-hidden">
                 <p className="text-sm text-muted-foreground uppercase tracking-wider mb-2">
                   {product.vendor || "StrapHub"}
                 </p>
-                <h1 className="text-2xl md:text-3xl font-bold mb-4">{product.title}</h1>
+                <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 break-words">{product.title}</h1>
 
                 {/* Price */}
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-4">
                   <span className={cn(
-                    "text-2xl font-bold",
+                    "text-xl md:text-2xl font-bold",
                     discount > 0 && "text-success"
                   )}>
                     {formatPrice(price)}
                   </span>
                   {compareAtPrice && parseFloat(compareAtPrice) > parseFloat(price) && (
                     <>
-                      <span className="text-lg text-muted-foreground line-through">
+                      <span className="text-base md:text-lg text-muted-foreground line-through">
                         {formatPrice(compareAtPrice)}
                       </span>
                       <span className="badge-sale">Save {discount}%</span>
@@ -500,49 +500,49 @@ const Product = () => {
                 </div>
 
                 {/* Promotional Box with Countdown */}
-                <div className="bg-sale/15 border border-sale/40 rounded-lg p-4 mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2 text-sale font-semibold">
-                      <Clock className="w-4 h-4" />
-                      Same day shipping?
+                <div className="bg-sale/15 border border-sale/40 rounded-lg p-3 md:p-4 mb-6 overflow-hidden">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2 text-sale font-semibold text-sm md:text-base">
+                      <Clock className="w-4 h-4 flex-shrink-0" />
+                      <span>Same day shipping?</span>
                     </div>
-                    <div className="flex items-center gap-1 bg-background rounded px-2 py-1">
-                      <span className="font-mono text-sm font-bold">{String(countdown.hours).padStart(2, '0')}</span>
+                    <div className="flex items-center gap-1 bg-background rounded px-2 py-1 w-fit">
+                      <span className="font-mono text-xs md:text-sm font-bold">{String(countdown.hours).padStart(2, '0')}</span>
                       <span className="text-muted-foreground">:</span>
-                      <span className="font-mono text-sm font-bold">{String(countdown.minutes).padStart(2, '0')}</span>
+                      <span className="font-mono text-xs md:text-sm font-bold">{String(countdown.minutes).padStart(2, '0')}</span>
                       <span className="text-muted-foreground">:</span>
-                      <span className="font-mono text-sm font-bold">{String(countdown.seconds).padStart(2, '0')}</span>
+                      <span className="font-mono text-xs md:text-sm font-bold">{String(countdown.seconds).padStart(2, '0')}</span>
                     </div>
                   </div>
-                  <p className="text-sm text-foreground mb-1">Order within the countdown for same-day dispatch!</p>
+                  <p className="text-xs md:text-sm text-foreground mb-1">Order within the countdown for same-day dispatch!</p>
                   <div className="space-y-2 mt-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Truck className="w-4 h-4 text-success" />
+                    <div className="flex items-center gap-2 text-xs md:text-sm">
+                      <Truck className="w-4 h-4 text-success flex-shrink-0" />
                       <span>Free shipping on orders over £25</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <RefreshCw className="w-4 h-4 text-success" />
+                    <div className="flex items-center gap-2 text-xs md:text-sm">
+                      <RefreshCw className="w-4 h-4 text-success flex-shrink-0" />
                       <span>30-day return policy, free exchanges</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Leaf className="w-4 h-4 text-success" />
+                    <div className="flex items-center gap-2 text-xs md:text-sm">
+                      <Leaf className="w-4 h-4 text-success flex-shrink-0" />
                       <span>100% sustainable delivery using letterbox parcel</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Trust Icons */}
-                <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg mb-6">
+                <div className="grid grid-cols-3 gap-2 md:gap-4 p-3 md:p-4 bg-muted rounded-lg mb-6">
                   <div className="text-center">
-                    <Truck className="w-5 h-5 mx-auto mb-1 text-success" />
-                    <p className="text-xs">Free Shipping £25+</p>
+                    <Truck className="w-4 md:w-5 h-4 md:h-5 mx-auto mb-1 text-success" />
+                    <p className="text-[10px] md:text-xs">Free Shipping £25+</p>
                   </div>
                   <div className="text-center">
-                    <RefreshCw className="w-5 h-5 mx-auto mb-1 text-success" />
-                    <p className="text-xs">30-Day Returns</p>
+                    <RefreshCw className="w-4 md:w-5 h-4 md:h-5 mx-auto mb-1 text-success" />
+                    <p className="text-[10px] md:text-xs">30-Day Returns</p>
                   </div>
                   <div className="text-center">
-                    <Shield className="w-5 h-5 mx-auto mb-1 text-success" />
+                    <Shield className="w-4 md:w-5 h-4 md:h-5 mx-auto mb-1 text-success" />
                     <p className="text-xs">Secure Checkout</p>
                   </div>
                 </div>

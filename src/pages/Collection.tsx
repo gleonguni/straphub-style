@@ -238,23 +238,23 @@ const Collection = () => {
         <meta name="description" content={`Shop ${collectionName.toLowerCase()} at StrapHub. Free UK shipping over £25. 100-day returns.`} />
       </Helmet>
 
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col overflow-x-hidden w-full max-w-full">
         <AnnouncementBar />
         <Header cartCount={totalItems} onCartClick={() => setIsCartOpen(true)} />
 
-        <main className="flex-1">
+        <main className="flex-1 overflow-x-hidden">
           {/* Collection Header */}
           <div className="bg-muted py-8 md:py-12">
             <div className="container">
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">{collectionName}</h1>
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 break-words">{collectionName}</h1>
               <p className="text-muted-foreground">
                 {isLoading ? "Loading..." : `${displayedProducts.length} products`}
               </p>
             </div>
           </div>
 
-          <div className="container py-8">
-            <div className="flex gap-8">
+          <div className="container py-6 md:py-8 overflow-hidden">
+            <div className="flex gap-6 md:gap-8">
               {/* Desktop Filters */}
               <aside className="hidden lg:block w-64 flex-shrink-0">
                 <div className="sticky top-24">
