@@ -9,38 +9,11 @@ import { TrustSection } from "@/components/home/TrustSection";
 import { FeaturedCollections } from "@/components/home/FeaturedCollections";
 import { BrandShowcase } from "@/components/home/BrandShowcase";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
-
-// Mock cart state - will integrate with Shopify
-const mockCartItems = [
-  {
-    id: "1",
-    name: "Premium Leather Strap - Apple Watch 44mm",
-    variant: "Brown / 44mm",
-    price: 29.99,
-    quantity: 1,
-    image: "https://images.unsplash.com/photo-1434493789847-2a75b0eb32ac?w=200&h=200&fit=crop",
-  },
-];
+import { useCartStore } from "@/stores/cartStore";
 
 const Index = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cartItems, setCartItems] = useState(mockCartItems);
-
-  const handleUpdateQuantity = (id: string, quantity: number) => {
-    if (quantity === 0) {
-      setCartItems(items => items.filter(item => item.id !== id));
-    } else {
-      setCartItems(items =>
-        items.map(item =>
-          item.id === id ? { ...item, quantity } : item
-        )
-      );
-    }
-  };
-
-  const handleRemoveItem = (id: string) => {
-    setCartItems(items => items.filter(item => item.id !== id));
-  };
+  const totalItems = useCartStore((state) => state.getTotalItems());
 
   return (
     <>
@@ -52,7 +25,7 @@ const Index = () => {
       <div className="min-h-screen flex flex-col">
         <AnnouncementBar />
         <Header 
-          cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)} 
+          cartCount={totalItems} 
           onCartClick={() => setIsCartOpen(true)} 
         />
         
@@ -69,9 +42,6 @@ const Index = () => {
         <CartDrawer
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
-          items={cartItems}
-          onUpdateQuantity={handleUpdateQuantity}
-          onRemove={handleRemoveItem}
         />
       </div>
     </>

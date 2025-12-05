@@ -1,84 +1,108 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Minus, Plus, Truck, RefreshCw, Shield, ChevronDown, Star } from "lucide-react";
+import { Minus, Plus, Truck, RefreshCw, Shield, ChevronDown, Loader2 } from "lucide-react";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/layout/CartDrawer";
-import { ProductCard } from "@/components/products/ProductCard";
+import { ShopifyProductCard } from "@/components/products/ShopifyProductCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-// Mock product data - will come from Shopify
-const mockProduct = {
-  id: "1",
-  name: "Premium Leather Strap - Apple Watch",
-  brand: "StrapHub",
-  price: 29.99,
-  compareAtPrice: 39.99,
-  description: "Elevate your Apple Watch with our premium genuine leather strap. Crafted from top-grain Italian leather, this strap combines classic elegance with modern durability.",
-  features: [
-    "Genuine Italian leather",
-    "Stainless steel buckle",
-    "Quick-release spring bars",
-    "Fits all Apple Watch sizes",
-    "Water-resistant coating",
-  ],
-  compatibility: "Apple Watch Series 1-10, SE, Ultra",
-  images: [
-    "https://images.unsplash.com/photo-1434493789847-2a75b0eb32ac?w=800&h=800&fit=crop",
-    "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=800&fit=crop",
-    "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&h=800&fit=crop",
-  ],
-  colors: [
-    { name: "Brown", value: "#8B4513" },
-    { name: "Black", value: "#1a1a1a" },
-    { name: "Tan", value: "#D2B48C" },
-    { name: "Navy", value: "#1e3a5f" },
-  ],
-  sizes: ["38/40mm", "42/44/45mm", "49mm Ultra"],
-};
-
-const relatedProducts = [
-  { id: "2", name: "Sport Silicone Band - Midnight Black", brand: "StrapHub", price: 14.99, image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop" },
-  { id: "3", name: "Milanese Loop - Silver", brand: "StrapHub", price: 26.99, image: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&h=500&fit=crop" },
-  { id: "4", name: "Nylon Alpine Loop - Storm Blue", brand: "StrapHub", price: 19.99, image: "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=500&h=500&fit=crop" },
-  { id: "5", name: "Titanium Link Bracelet", brand: "StrapHub", price: 49.99, image: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=500&h=500&fit=crop" },
-];
-
-const accordionSections = [
-  { id: "description", title: "Description", content: mockProduct.description },
-  { id: "features", title: "Key Features", content: mockProduct.features.map(f => `• ${f}`).join("\n") },
-  { id: "compatibility", title: "Compatibility", content: mockProduct.compatibility },
-  { id: "shipping", title: "Shipping & Returns", content: "Free UK shipping on orders over £25. Same-day dispatch on orders placed before 9pm. 100-day hassle-free returns." },
-  { id: "reviews", title: "Reviews", content: "Be the first to write a review!" },
-];
+import { useShopifyProduct, useShopifyProducts } from "@/hooks/useShopifyProducts";
+import { useCartStore } from "@/stores/cartStore";
+import { formatPrice, calculateDiscount, CartItem } from "@/lib/shopify";
+import { toast } from "sonner";
 
 const Product = () => {
   const { id } = useParams();
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedColor, setSelectedColor] = useState(mockProduct.colors[0]);
-  const [selectedSize, setSelectedSize] = useState(mockProduct.sizes[1]);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>("description");
 
-  const discount = mockProduct.compareAtPrice 
-    ? Math.round(((mockProduct.compareAtPrice - mockProduct.price) / mockProduct.compareAtPrice) * 100)
-    : 0;
-  const hasFreeShipping = mockProduct.price >= 25;
+  const { data: product, isLoading, error } = useShopifyProduct(id || "");
+  const { data: relatedProducts } = useShopifyProducts(4);
+  const { addItem } = useCartStore();
+  const totalItems = useCartStore((state) => state.getTotalItems());
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <AnnouncementBar />
+        <Header cartCount={totalItems} onCartClick={() => setIsCartOpen(true)} />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <AnnouncementBar />
+        <Header cartCount={totalItems} onCartClick={() => setIsCartOpen(true)} />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-2">Product not found</h1>
+            <p className="text-muted-foreground mb-4">The product you're looking for doesn't exist.</p>
+            <Button asChild>
+              <Link to="/collections/all">Browse All Products</Link>
+            </Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const selectedVariant = product.variants.edges[selectedVariantIndex]?.node;
+  const price = selectedVariant?.price.amount || product.priceRange.minVariantPrice.amount;
+  const compareAtPrice = selectedVariant?.compareAtPrice?.amount;
+  const discount = calculateDiscount(price, compareAtPrice);
+  const hasFreeShipping = parseFloat(price) >= 25;
+  const images = product.images.edges;
+
+  const handleAddToCart = () => {
+    if (!selectedVariant) {
+      toast.error("Please select a variant");
+      return;
+    }
+
+    const cartItem: CartItem = {
+      product: { node: product },
+      variantId: selectedVariant.id,
+      variantTitle: selectedVariant.title,
+      price: selectedVariant.price,
+      quantity,
+      selectedOptions: selectedVariant.selectedOptions,
+    };
+
+    addItem(cartItem);
+    toast.success("Added to cart", {
+      description: `${product.title} x ${quantity}`,
+      position: "top-center",
+    });
+  };
+
+  const accordionSections = [
+    { id: "description", title: "Description", content: product.description || "No description available." },
+    { id: "shipping", title: "Shipping & Returns", content: "Free UK shipping on orders over £25. Same-day dispatch on orders placed before 9pm. 100-day hassle-free returns." },
+  ];
 
   return (
     <>
       <Helmet>
-        <title>{mockProduct.name} | StrapHub UK</title>
-        <meta name="description" content={`${mockProduct.name} - £${mockProduct.price}. ${mockProduct.description.slice(0, 150)}...`} />
+        <title>{product.title} | StrapHub UK</title>
+        <meta name="description" content={`${product.title} - ${formatPrice(price)}. ${product.description?.slice(0, 150) || ""}...`} />
       </Helmet>
 
       <div className="min-h-screen flex flex-col">
         <AnnouncementBar />
-        <Header cartCount={0} onCartClick={() => setIsCartOpen(true)} />
+        <Header cartCount={totalItems} onCartClick={() => setIsCartOpen(true)} />
 
         <main className="flex-1">
           {/* Breadcrumbs */}
@@ -88,7 +112,7 @@ const Product = () => {
               <span className="mx-2">/</span>
               <Link to="/collections/all" className="hover:text-foreground">All Straps</Link>
               <span className="mx-2">/</span>
-              <span className="text-foreground">{mockProduct.name}</span>
+              <span className="text-foreground">{product.title}</span>
             </nav>
           </div>
 
@@ -99,56 +123,48 @@ const Product = () => {
               <div className="space-y-4">
                 <div className="aspect-square bg-muted rounded-xl overflow-hidden">
                   <img 
-                    src={mockProduct.images[selectedImage]}
-                    alt={mockProduct.name}
+                    src={images[selectedImage]?.node.url || '/placeholder.svg'}
+                    alt={images[selectedImage]?.node.altText || product.title}
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="grid grid-cols-4 gap-3">
-                  {mockProduct.images.map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedImage(index)}
-                      className={cn(
-                        "aspect-square rounded-lg overflow-hidden border-2 transition-colors",
-                        selectedImage === index ? "border-primary" : "border-transparent"
-                      )}
-                    >
-                      <img src={image} alt="" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
+                {images.length > 1 && (
+                  <div className="grid grid-cols-4 gap-3">
+                    {images.map((image, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedImage(index)}
+                        className={cn(
+                          "aspect-square rounded-lg overflow-hidden border-2 transition-colors",
+                          selectedImage === index ? "border-primary" : "border-transparent"
+                        )}
+                      >
+                        <img src={image.node.url} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Product Info */}
               <div className="lg:sticky lg:top-24 lg:self-start">
                 <p className="text-sm text-muted-foreground uppercase tracking-wider mb-2">
-                  {mockProduct.brand}
+                  {product.vendor || "StrapHub"}
                 </p>
-                <h1 className="text-2xl md:text-3xl font-bold mb-4">{mockProduct.name}</h1>
-
-                {/* Rating */}
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="w-4 h-4 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <span className="text-sm text-muted-foreground">No reviews yet</span>
-                </div>
+                <h1 className="text-2xl md:text-3xl font-bold mb-4">{product.title}</h1>
 
                 {/* Price */}
                 <div className="flex items-center gap-3 mb-6">
                   <span className={cn(
                     "text-2xl font-bold",
-                    mockProduct.compareAtPrice && "text-sale"
+                    discount > 0 && "text-sale"
                   )}>
-                    £{mockProduct.price.toFixed(2)}
+                    {formatPrice(price)}
                   </span>
-                  {mockProduct.compareAtPrice && (
+                  {compareAtPrice && parseFloat(compareAtPrice) > parseFloat(price) && (
                     <>
                       <span className="text-lg text-muted-foreground line-through">
-                        £{mockProduct.compareAtPrice.toFixed(2)}
+                        {formatPrice(compareAtPrice)}
                       </span>
                       <span className="badge-sale">Save {discount}%</span>
                     </>
@@ -163,52 +179,46 @@ const Product = () => {
                       Free Shipping
                     </span>
                   )}
-                  <span className="bg-muted px-2 py-0.5 text-xs font-medium rounded">In Stock</span>
+                  {selectedVariant?.availableForSale && (
+                    <span className="bg-muted px-2 py-0.5 text-xs font-medium rounded">In Stock</span>
+                  )}
                 </div>
 
-                {/* Color Selection */}
-                <div className="mb-6">
-                  <p className="text-sm font-medium mb-3">
-                    Color: <span className="text-muted-foreground">{selectedColor.name}</span>
-                  </p>
-                  <div className="flex gap-2">
-                    {mockProduct.colors.map((color) => (
-                      <button
-                        key={color.name}
-                        onClick={() => setSelectedColor(color)}
-                        className={cn(
-                          "swatch",
-                          selectedColor.name === color.name && "selected"
-                        )}
-                        style={{ backgroundColor: color.value }}
-                        title={color.name}
-                      />
+                {/* Variant Selection */}
+                {product.options.length > 0 && product.options[0].name !== "Title" && (
+                  <div className="mb-6">
+                    {product.options.map((option) => (
+                      <div key={option.name} className="mb-4">
+                        <p className="text-sm font-medium mb-3">
+                          {option.name}: <span className="text-muted-foreground">{selectedVariant?.selectedOptions.find(o => o.name === option.name)?.value}</span>
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {option.values.map((value) => {
+                            const variantIndex = product.variants.edges.findIndex(v => 
+                              v.node.selectedOptions.some(o => o.name === option.name && o.value === value)
+                            );
+                            const isSelected = selectedVariant?.selectedOptions.some(o => o.name === option.name && o.value === value);
+                            
+                            return (
+                              <button
+                                key={value}
+                                onClick={() => variantIndex >= 0 && setSelectedVariantIndex(variantIndex)}
+                                className={cn(
+                                  "px-4 py-2 border rounded-lg text-sm font-medium transition-colors",
+                                  isSelected 
+                                    ? "border-primary bg-primary text-primary-foreground" 
+                                    : "border-border hover:border-primary"
+                                )}
+                              >
+                                {value}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     ))}
                   </div>
-                </div>
-
-                {/* Size Selection */}
-                <div className="mb-6">
-                  <p className="text-sm font-medium mb-3">
-                    Size: <span className="text-muted-foreground">{selectedSize}</span>
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {mockProduct.sizes.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={cn(
-                          "px-4 py-2 border rounded-lg text-sm font-medium transition-colors",
-                          selectedSize === size 
-                            ? "border-primary bg-primary text-primary-foreground" 
-                            : "border-border hover:border-primary"
-                        )}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                )}
 
                 {/* Quantity & Add to Cart */}
                 <div className="flex gap-4 mb-6">
@@ -227,8 +237,13 @@ const Product = () => {
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
-                  <Button size="lg" className="flex-1">
-                    Add to Cart
+                  <Button 
+                    size="lg" 
+                    className="flex-1"
+                    onClick={handleAddToCart}
+                    disabled={!selectedVariant?.availableForSale}
+                  >
+                    {selectedVariant?.availableForSale ? "Add to Cart" : "Out of Stock"}
                   </Button>
                 </div>
 
@@ -276,18 +291,22 @@ const Product = () => {
             </div>
 
             {/* Related Products */}
-            <section className="mt-16">
-              <h2 className="text-2xl font-bold mb-6">You may also like</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                {relatedProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    {...product}
-                    onQuickAdd={() => console.log("Quick add:", product.id)}
-                  />
-                ))}
-              </div>
-            </section>
+            {relatedProducts && relatedProducts.length > 0 && (
+              <section className="mt-16">
+                <h2 className="text-2xl font-bold mb-6">You may also like</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                  {relatedProducts
+                    .filter(p => p.node.handle !== id)
+                    .slice(0, 4)
+                    .map((product) => (
+                      <ShopifyProductCard
+                        key={product.node.id}
+                        product={product}
+                      />
+                    ))}
+                </div>
+              </section>
+            )}
           </div>
         </main>
 
@@ -297,19 +316,24 @@ const Product = () => {
         <div className="sticky-atc">
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <p className="font-semibold">£{mockProduct.price.toFixed(2)}</p>
-              <p className="text-xs text-muted-foreground">{selectedColor.name} / {selectedSize}</p>
+              <p className="font-semibold">{formatPrice(price)}</p>
+              <p className="text-xs text-muted-foreground">
+                {selectedVariant?.title !== "Default Title" ? selectedVariant?.title : ""}
+              </p>
             </div>
-            <Button className="flex-1">Add to Cart</Button>
+            <Button 
+              className="flex-1" 
+              onClick={handleAddToCart}
+              disabled={!selectedVariant?.availableForSale}
+            >
+              Add to Cart
+            </Button>
           </div>
         </div>
 
         <CartDrawer
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
-          items={[]}
-          onUpdateQuantity={() => {}}
-          onRemove={() => {}}
         />
       </div>
     </>

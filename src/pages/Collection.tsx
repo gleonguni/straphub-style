@@ -1,26 +1,16 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Filter, X, ChevronDown, Grid3X3, LayoutGrid } from "lucide-react";
+import { Filter, X, ChevronDown, Grid3X3, LayoutGrid, Loader2 } from "lucide-react";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/layout/CartDrawer";
-import { ProductCard } from "@/components/products/ProductCard";
+import { ShopifyProductCard } from "@/components/products/ShopifyProductCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-// Mock products - will come from Shopify
-const mockProducts = [
-  { id: "1", name: "Premium Leather Strap - Classic Brown", brand: "StrapHub", price: 29.99, compareAtPrice: 39.99, image: "https://images.unsplash.com/photo-1434493789847-2a75b0eb32ac?w=500&h=500&fit=crop", badge: "sale" as const },
-  { id: "2", name: "Sport Silicone Band - Midnight Black", brand: "StrapHub", price: 14.99, image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop", badge: "bestseller" as const },
-  { id: "3", name: "Milanese Loop - Silver", brand: "StrapHub", price: 26.99, image: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&h=500&fit=crop" },
-  { id: "4", name: "Nylon Alpine Loop - Storm Blue", brand: "StrapHub", price: 19.99, compareAtPrice: 24.99, image: "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=500&h=500&fit=crop", badge: "new" as const },
-  { id: "5", name: "Titanium Link Bracelet", brand: "StrapHub", price: 49.99, image: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=500&h=500&fit=crop" },
-  { id: "6", name: "Ocean Band - Marine", brand: "StrapHub", price: 34.99, image: "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=500&h=500&fit=crop" },
-  { id: "7", name: "Solo Loop - Product Red", brand: "StrapHub", price: 18.99, image: "https://images.unsplash.com/photo-1551816230-ef5deaed4a26?w=500&h=500&fit=crop" },
-  { id: "8", name: "Modern Buckle - Chalk", brand: "StrapHub", price: 32.99, compareAtPrice: 42.99, image: "https://images.unsplash.com/photo-1617043786394-f977fa12eddf?w=500&h=500&fit=crop", badge: "sale" as const },
-];
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
+import { useCartStore } from "@/stores/cartStore";
 
 const filterOptions = {
   material: ["Silicone", "Leather", "Metal", "Nylon", "Milanese"],
@@ -48,6 +38,9 @@ const Collection = () => {
   const [gridSize, setGridSize] = useState<"large" | "small">("large");
   const [expandedFilter, setExpandedFilter] = useState<string | null>("material");
 
+  const totalItems = useCartStore((state) => state.getTotalItems());
+  const { data: products, isLoading, error } = useShopifyProducts(50);
+  
   const collectionName = collectionNames[slug] || "All Straps";
 
   return (
@@ -59,7 +52,7 @@ const Collection = () => {
 
       <div className="min-h-screen flex flex-col">
         <AnnouncementBar />
-        <Header cartCount={0} onCartClick={() => setIsCartOpen(true)} />
+        <Header cartCount={totalItems} onCartClick={() => setIsCartOpen(true)} />
 
         <main className="flex-1">
           {/* Collection Header */}
@@ -67,7 +60,7 @@ const Collection = () => {
             <div className="container">
               <h1 className="text-3xl md:text-4xl font-bold mb-2">{collectionName}</h1>
               <p className="text-muted-foreground">
-                {mockProducts.length} products
+                {isLoading ? "Loading..." : `${products?.length || 0} products`}
               </p>
             </div>
           </div>
@@ -151,28 +144,43 @@ const Collection = () => {
                   </div>
                 </div>
 
-                {/* Product Grid */}
-                <div className={cn(
-                  "grid gap-4 md:gap-6",
-                  gridSize === "large" 
-                    ? "grid-cols-2 md:grid-cols-3" 
-                    : "grid-cols-2 md:grid-cols-4"
-                )}>
-                  {mockProducts.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      {...product}
-                      onQuickAdd={() => console.log("Quick add:", product.id)}
-                    />
-                  ))}
-                </div>
+                {/* Loading State */}
+                {isLoading && (
+                  <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  </div>
+                )}
 
-                {/* Load More */}
-                <div className="mt-10 text-center">
-                  <Button variant="outline" size="lg">
-                    Load More Products
-                  </Button>
-                </div>
+                {/* Error State */}
+                {error && (
+                  <div className="text-center py-20">
+                    <p className="text-muted-foreground">Failed to load products</p>
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {!isLoading && !error && products?.length === 0 && (
+                  <div className="text-center py-20">
+                    <p className="text-muted-foreground">No products found</p>
+                  </div>
+                )}
+
+                {/* Product Grid */}
+                {products && products.length > 0 && (
+                  <div className={cn(
+                    "grid gap-4 md:gap-6",
+                    gridSize === "large" 
+                      ? "grid-cols-2 md:grid-cols-3" 
+                      : "grid-cols-2 md:grid-cols-4"
+                  )}>
+                    {products.map((product) => (
+                      <ShopifyProductCard
+                        key={product.node.id}
+                        product={product}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -230,9 +238,6 @@ const Collection = () => {
         <CartDrawer
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
-          items={[]}
-          onUpdateQuantity={() => {}}
-          onRemove={() => {}}
         />
       </div>
     </>
