@@ -21,12 +21,45 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const currencyCode = items[0]?.price.currencyCode || 'GBP';
 
   const handleCheckout = async () => {
+    if (items.length === 0) {
+      toast.error("Your cart is empty");
+      return;
+    }
+
     try {
+      console.log('Starting checkout with items:', items);
       const checkoutUrl = await createCheckout();
+      console.log('Checkout URL received:', checkoutUrl);
+      
       if (checkoutUrl) {
-        // Use window.location.href for reliable redirect in all contexts
-        window.location.href = checkoutUrl;
+        // Try window.open first (works best for external redirects)
+        const newWindow = window.open(checkoutUrl, '_blank');
+        
+        if (newWindow) {
+          console.log('Checkout opened in new tab');
+          toast.success("Checkout opened!", {
+            description: "Complete your purchase in the new tab.",
+          });
+          onClose();
+        } else {
+          // Popup was blocked - try direct navigation
+          console.log('Popup blocked, trying direct navigation');
+          toast.info("Opening checkout...", {
+            description: "If checkout doesn't open, click the link below.",
+            action: {
+              label: "Open Checkout",
+              onClick: () => window.open(checkoutUrl, '_blank'),
+            },
+            duration: 10000,
+          });
+          
+          // Try location.href as fallback
+          setTimeout(() => {
+            window.location.href = checkoutUrl;
+          }, 500);
+        }
       } else {
+        console.error('No checkout URL returned');
         toast.error("Failed to create checkout", {
           description: "Please try again or contact support.",
         });

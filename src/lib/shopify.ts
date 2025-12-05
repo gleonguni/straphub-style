@@ -312,10 +312,14 @@ export async function fetchProductByHandle(handle: string): Promise<ShopifyProdu
 
 // Create Checkout
 export async function createStorefrontCheckout(items: CartItem[]): Promise<string> {
+  console.log('Creating checkout for items:', items.map(i => ({ variantId: i.variantId, quantity: i.quantity })));
+  
   const lines = items.map(item => ({
     quantity: item.quantity,
     merchandiseId: item.variantId,
   }));
+
+  console.log('Cart lines:', lines);
 
   const cartData = await storefrontApiRequest<{
     data: {
@@ -331,20 +335,28 @@ export async function createStorefrontCheckout(items: CartItem[]): Promise<strin
     input: { lines },
   });
 
+  console.log('Cart API response:', JSON.stringify(cartData, null, 2));
+
   if (cartData.data.cartCreate.userErrors.length > 0) {
-    throw new Error(`Cart creation failed: ${cartData.data.cartCreate.userErrors.map(e => e.message).join(', ')}`);
+    const errorMsg = cartData.data.cartCreate.userErrors.map(e => e.message).join(', ');
+    console.error('Cart creation errors:', errorMsg);
+    throw new Error(`Cart creation failed: ${errorMsg}`);
   }
 
   const cart = cartData.data.cartCreate.cart;
   
   if (!cart?.checkoutUrl) {
+    console.error('No checkout URL in response:', cart);
     throw new Error('No checkout URL returned from Shopify');
   }
 
   // Add channel parameter for online store checkout (avoids password page)
   const url = new URL(cart.checkoutUrl);
   url.searchParams.set('channel', 'online_store');
-  return url.toString();
+  const finalUrl = url.toString();
+  
+  console.log('Final checkout URL:', finalUrl);
+  return finalUrl;
 }
 
 // Helper to format price
