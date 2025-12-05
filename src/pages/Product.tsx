@@ -62,21 +62,49 @@ const Product = () => {
   // Get the selected variant
   const selectedVariant = product?.variants.edges[selectedVariantIndex]?.node;
 
-  // Filter images to ONLY show selected variant image
+  // Filter images: show selected variant image + general images, hide other variant images
   const filteredImages = useMemo(() => {
     if (!product) return [];
     
-    // If variant has a specific image, ONLY show that image
-    if (selectedVariant?.image?.url) {
-      const variantImageUrl = selectedVariant.image.url;
-      const variantImage = product.images.edges.find(img => img.node.url === variantImageUrl);
-      if (variantImage) {
-        return [variantImage];
+    const allImages = product.images.edges;
+    
+    // Get all variant image URLs (images that belong to specific variants)
+    const variantImageUrls = new Set<string>();
+    product.variants.edges.forEach(v => {
+      if (v.node.image?.url) {
+        variantImageUrls.add(v.node.image.url);
+      }
+    });
+    
+    // Get the selected variant's image URL
+    const selectedVariantImageUrl = selectedVariant?.image?.url;
+    
+    // Filter images:
+    // - Keep images that are NOT variant images (general product images)
+    // - Keep the image that belongs to the SELECTED variant
+    // - Remove images that belong to OTHER variants
+    const filtered = allImages.filter(img => {
+      const imageUrl = img.node.url;
+      
+      // If this image is not a variant image, always show it
+      if (!variantImageUrls.has(imageUrl)) {
+        return true;
+      }
+      
+      // If this image IS a variant image, only show it if it's the selected variant's image
+      return imageUrl === selectedVariantImageUrl;
+    });
+    
+    // Put selected variant image first if it exists
+    if (selectedVariantImageUrl) {
+      const selectedIndex = filtered.findIndex(img => img.node.url === selectedVariantImageUrl);
+      if (selectedIndex > 0) {
+        const [selectedImg] = filtered.splice(selectedIndex, 1);
+        filtered.unshift(selectedImg);
       }
     }
     
-    // Fallback to first image only if no variant image
-    return product.images.edges.length > 0 ? [product.images.edges[0]] : [];
+    return filtered.length > 0 ? filtered : allImages.slice(0, 1);
   }, [product, selectedVariant]);
 
   // Reset image selection when variant changes
