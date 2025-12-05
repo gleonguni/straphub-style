@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/cartStore";
 import { formatPrice } from "@/lib/shopify";
+import { toast } from "sonner";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -20,10 +21,30 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const currencyCode = items[0]?.price.currencyCode || 'GBP';
 
   const handleCheckout = async () => {
-    const checkoutUrl = await createCheckout();
-    if (checkoutUrl) {
-      window.open(checkoutUrl, '_blank');
-      onClose();
+    // Open blank window immediately to avoid popup blockers
+    const checkoutWindow = window.open('about:blank', '_blank');
+    
+    try {
+      const checkoutUrl = await createCheckout();
+      if (checkoutUrl && checkoutWindow) {
+        checkoutWindow.location.href = checkoutUrl;
+        toast.success("Redirecting to checkout...");
+        onClose();
+      } else if (checkoutUrl) {
+        // Fallback if popup was blocked
+        window.location.href = checkoutUrl;
+      } else {
+        checkoutWindow?.close();
+        toast.error("Failed to create checkout", {
+          description: "Please try again or contact support.",
+        });
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      checkoutWindow?.close();
+      toast.error("Checkout failed", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
     }
   };
 
