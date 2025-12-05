@@ -2,7 +2,7 @@ import { Truck, RefreshCw, Shield, CreditCard } from "lucide-react";
 
 export function TrustGuaranteeSection() {
   return (
-    <section className="py-12 bg-muted border-t border-border">
+    <section className="py-12 bg-primary/10 border-t border-primary/20">
       <div className="container">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold mb-2">Why Shop With Us?</h2>
@@ -22,7 +22,7 @@ export function TrustGuaranteeSection() {
             <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-success/10 flex items-center justify-center">
               <RefreshCw className="w-7 h-7 text-success" />
             </div>
-            <h3 className="font-semibold mb-1">100-Day Returns</h3>
+            <h3 className="font-semibold mb-1">30-Day Returns</h3>
             <p className="text-sm text-muted-foreground">Hassle-free returns</p>
           </div>
           
