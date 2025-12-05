@@ -7,11 +7,13 @@ import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/layout/CartDrawer";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useCartStore } from "@/stores/cartStore";
 
 const Contact = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const totalItems = useCartStore((state) => state.getTotalItems());
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,7 +40,7 @@ const Contact = () => {
 
       <div className="min-h-screen flex flex-col">
         <AnnouncementBar />
-        <Header cartCount={0} onCartClick={() => setIsCartOpen(true)} />
+        <Header cartCount={totalItems} onCartClick={() => setIsCartOpen(true)} />
 
         <main className="flex-1">
           {/* Header */}
@@ -228,9 +230,6 @@ const Contact = () => {
         <CartDrawer
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
-          items={[]}
-          onUpdateQuantity={() => {}}
-          onRemove={() => {}}
         />
       </div>
     </>
