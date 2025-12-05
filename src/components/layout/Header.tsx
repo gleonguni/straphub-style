@@ -70,9 +70,9 @@ export function Header({ cartCount = 0, onCartClick }: HeaderProps) {
               Home
             </Link>
             
-            {/* All Straps Dropdown */}
+            {/* All Straps Dropdown Trigger */}
             <div 
-              className="relative mega-menu-trigger"
+              className="relative"
               onMouseEnter={() => setIsMegaMenuOpen(true)}
               onMouseLeave={() => setIsMegaMenuOpen(false)}
             >
@@ -80,71 +80,6 @@ export function Header({ cartCount = 0, onCartClick }: HeaderProps) {
                 All Straps
                 <ChevronDown className={cn("w-4 h-4 transition-transform", isMegaMenuOpen && "rotate-180")} />
               </button>
-              
-              {/* Mega Menu */}
-              <div className={cn(
-                "mega-menu",
-                isMegaMenuOpen && "opacity-100 visible"
-              )}>
-                <div className="container py-8">
-                  <div className="grid grid-cols-4 gap-8">
-                    {/* Shop by Brand */}
-                    <div className="col-span-2">
-                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                        Shop by Brand
-                      </h3>
-                      <div className="grid grid-cols-3 gap-3">
-                        {watchBrands.map((brand) => (
-                          <Link
-                            key={brand.name}
-                            to={brand.href}
-                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors"
-                          >
-                            <span className="text-lg">{brand.image}</span>
-                            <span className="text-sm font-medium">{brand.name}</span>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {/* Shop by Material */}
-                    <div>
-                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                        Shop by Material
-                      </h3>
-                      <div className="space-y-2">
-                        {strapTypes.map((type) => (
-                          <Link
-                            key={type.name}
-                            to={type.href}
-                            className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
-                          >
-                            {type.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {/* Featured */}
-                    <div>
-                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                        Featured
-                      </h3>
-                      <div className="space-y-2">
-                        <Link to="/collections/new-arrivals" className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium">
-                          New Arrivals
-                        </Link>
-                        <Link to="/collections/bestsellers" className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium">
-                          Best Sellers
-                        </Link>
-                        <Link to="/collections/sale" className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium text-sale">
-                          Sale Items
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <Link 
@@ -180,6 +115,89 @@ export function Header({ cartCount = 0, onCartClick }: HeaderProps) {
                 </span>
               )}
             </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mega Menu - Full Width Dropdown */}
+      <div 
+        className={cn(
+          "absolute left-0 right-0 top-full bg-background shadow-lg border-t border-border z-50 transition-all duration-200 hidden md:block",
+          isMegaMenuOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+        )}
+        onMouseEnter={() => setIsMegaMenuOpen(true)}
+        onMouseLeave={() => setIsMegaMenuOpen(false)}
+      >
+        <div className="container py-8">
+          <div className="grid grid-cols-4 gap-8">
+            {/* Shop by Brand */}
+            <div className="col-span-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                Shop by Brand
+              </h3>
+              <div className="grid grid-cols-3 gap-3">
+                {watchBrands.map((brand) => (
+                  <Link
+                    key={brand.name}
+                    to={brand.href}
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors"
+                    onClick={() => setIsMegaMenuOpen(false)}
+                  >
+                    <span className="text-lg">{brand.image}</span>
+                    <span className="text-sm font-medium">{brand.name}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+            
+            {/* Shop by Material */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                Shop by Material
+              </h3>
+              <div className="space-y-2">
+                {strapTypes.map((type) => (
+                  <Link
+                    key={type.name}
+                    to={type.href}
+                    className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+                    onClick={() => setIsMegaMenuOpen(false)}
+                  >
+                    {type.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            
+            {/* Featured */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                Featured
+              </h3>
+              <div className="space-y-2">
+                <Link 
+                  to="/collections/new-arrivals" 
+                  className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+                  onClick={() => setIsMegaMenuOpen(false)}
+                >
+                  New Arrivals
+                </Link>
+                <Link 
+                  to="/collections/bestsellers" 
+                  className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+                  onClick={() => setIsMegaMenuOpen(false)}
+                >
+                  Best Sellers
+                </Link>
+                <Link 
+                  to="/collections/sale" 
+                  className="block p-2 rounded-lg hover:bg-muted transition-colors text-sm font-medium text-sale"
+                  onClick={() => setIsMegaMenuOpen(false)}
+                >
+                  Sale Items
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>
