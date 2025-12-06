@@ -753,13 +753,12 @@ const Product = () => {
                                   )}
                                 </div>
                               </div>
-                              <Button 
-                                size="sm" 
-                                className="bg-success hover:bg-success/90 flex-shrink-0 self-center"
+                              <AddToCartButton
                                 onClick={() => handleQuickAdd(relatedProduct)}
-                              >
-                                Add to order
-                              </Button>
+                                size="sm"
+                                className="flex-shrink-0 self-center text-xs px-3"
+                                label="Add to order"
+                              />
                             </div>
                           );
                         })}
