@@ -23,13 +23,13 @@ const PageTransition = ({ children }: { children: ReactNode }) => {
     const timeout = setTimeout(() => {
       window.scrollTo({ top: 0, behavior: "instant" });
       setIsTransitioning(false);
-    }, 100);
+    }, 50);
     return () => clearTimeout(timeout);
   }, [location.pathname]);
 
   return (
     <div
-      className={`transition-opacity duration-150 ease-out ${
+      className={`transition-opacity duration-250 ease-out ${
         isTransitioning ? "opacity-0" : "opacity-100"
       }`}
     >
