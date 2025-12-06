@@ -4,7 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-import { useEffect, useState, ReactNode } from "react";
+import { AnimatePresence } from "framer-motion";
+import PageTransition from "./components/PageTransition";
 import Index from "./pages/Index";
 import Collection from "./pages/Collection";
 import Product from "./pages/Product";
@@ -13,44 +14,24 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Smooth page transition wrapper
-const PageTransition = ({ children }: { children: ReactNode }) => {
+const AnimatedRoutes = () => {
   const location = useLocation();
-  const [isTransitioning, setIsTransitioning] = useState(false);
-
-  useEffect(() => {
-    setIsTransitioning(true);
-    const timeout = setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: "instant" });
-      setIsTransitioning(false);
-    }, 50);
-    return () => clearTimeout(timeout);
-  }, [location.pathname]);
 
   return (
-    <div
-      className={`transition-opacity duration-350 ease-out ${
-        isTransitioning ? "opacity-70" : "opacity-100"
-      }`}
-    >
-      {children}
-    </div>
+    <AnimatePresence mode="wait">
+      <PageTransition key={location.pathname}>
+        <Routes location={location}>
+          <Route path="/" element={<Index />} />
+          <Route path="/collections/:slug" element={<Collection />} />
+          <Route path="/collection/:slug" element={<Collection />} />
+          <Route path="/products/:id" element={<Product />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </PageTransition>
+    </AnimatePresence>
   );
 };
-
-const AppRoutes = () => (
-  <PageTransition>
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/collections/:slug" element={<Collection />} />
-      <Route path="/collection/:slug" element={<Collection />} />
-      <Route path="/products/:id" element={<Product />} />
-      <Route path="/contact" element={<Contact />} />
-      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  </PageTransition>
-);
 
 const App = () => (
   <HelmetProvider>
@@ -59,7 +40,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppRoutes />
+          <AnimatedRoutes />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
