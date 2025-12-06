@@ -10,32 +10,28 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useCartStore } from "@/stores/cartStore";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
-
 const Contact = () => {
   useScrollToTop();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-  const totalItems = useCartStore((state) => state.getTotalItems());
-
+  const {
+    toast
+  } = useToast();
+  const totalItems = useCartStore(state => state.getTotalItems());
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     // Simulate form submission
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
     toast({
       title: "Message sent!",
-      description: "We'll get back to you within 24 hours.",
+      description: "We'll get back to you within 24 hours."
     });
-    
     setIsSubmitting(false);
     (e.target as HTMLFormElement).reset();
   };
-
-  return (
-    <>
+  return <>
       <Helmet>
         <title>Contact Us | StrapHub UK</title>
         <meta name="description" content="Get in touch with StrapHub. We're here to help with any questions about our smartwatch straps." />
@@ -67,25 +63,13 @@ const Contact = () => {
                       <label htmlFor="name" className="block text-sm font-medium mb-2">
                         Name *
                       </label>
-                      <input
-                        id="name"
-                        type="text"
-                        required
-                        className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="Your name"
-                      />
+                      <input id="name" type="text" required className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Your name" />
                     </div>
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium mb-2">
                         Email *
                       </label>
-                      <input
-                        id="email"
-                        type="email"
-                        required
-                        className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="your@email.com"
-                      />
+                      <input id="email" type="email" required className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary" placeholder="your@email.com" />
                     </div>
                   </div>
 
@@ -93,23 +77,14 @@ const Contact = () => {
                     <label htmlFor="orderNumber" className="block text-sm font-medium mb-2">
                       Order Number (if applicable)
                     </label>
-                    <input
-                      id="orderNumber"
-                      type="text"
-                      className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="#12345"
-                    />
+                    <input id="orderNumber" type="text" className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary" placeholder="#12345" />
                   </div>
 
                   <div>
                     <label htmlFor="subject" className="block text-sm font-medium mb-2">
                       Subject *
                     </label>
-                    <select
-                      id="subject"
-                      required
-                      className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
+                    <select id="subject" required className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary">
                       <option value="">Select a topic</option>
                       <option value="order">Order Enquiry</option>
                       <option value="product">Product Question</option>
@@ -123,24 +98,14 @@ const Contact = () => {
                     <label htmlFor="message" className="block text-sm font-medium mb-2">
                       Message *
                     </label>
-                    <textarea
-                      id="message"
-                      required
-                      rows={5}
-                      className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                      placeholder="How can we help you?"
-                    />
+                    <textarea id="message" required rows={5} className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="How can we help you?" />
                   </div>
 
                   <Button type="submit" size="lg" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      "Sending..."
-                    ) : (
-                      <>
+                    {isSubmitting ? "Sending..." : <>
                         <Send className="w-4 h-4 mr-2" />
                         Send Message
-                      </>
-                    )}
+                      </>}
                   </Button>
                 </form>
               </div>
@@ -177,8 +142,8 @@ const Contact = () => {
                     <div>
                       <h3 className="font-medium mb-1">Address</h3>
                       <p className="text-muted-foreground">
-                        40 South Way<br />
-                        London, HA9 0SR<br />
+                        2 Langs Road  <br />
+                        ​Armagh, BT60 1ET  <br />
                         United Kingdom
                       </p>
                     </div>
@@ -230,13 +195,8 @@ const Contact = () => {
 
         <Footer />
 
-        <CartDrawer
-          isOpen={isCartOpen}
-          onClose={() => setIsCartOpen(false)}
-        />
+        <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       </div>
-    </>
-  );
+    </>;
 };
-
 export default Contact;
