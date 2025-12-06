@@ -11,6 +11,7 @@ export interface ProductAnalysis {
   isCasual: boolean;
   hasQuickRelease: boolean;
   watchSizes: string[];
+  seriesNumbers: string[];
 }
 
 // Detect materials from product text
@@ -53,8 +54,10 @@ const FEATURE_PATTERNS = {
   adjustable: /adjustable|one\s*size|universal\s*fit/i,
 };
 
-// Extract watch sizes (e.g., 38mm, 40mm, 42mm, 44mm, etc.)
-const SIZE_PATTERN = /(\d{2,3})\s*mm/gi;
+// Extract watch sizes (e.g., 38mm, 40mm, 42mm, 44mm, etc.) - handles various formats
+const SIZE_PATTERN = /(\d{2})\s*(?:mm)?/gi;
+const SERIES_PATTERN = /series\s*(\d+)/gi;
+const IWATCH_SERIES_PATTERN = /iwatch\s*(?:series\s*)?(\d+)/gi;
 
 /**
  * Analyze a product's title and description to extract meaningful attributes
@@ -73,10 +76,51 @@ export function analyzeProduct(title: string, description?: string): ProductAnal
   const features = Object.entries(FEATURE_PATTERNS)
     .filter(([_, pattern]) => pattern.test(text))
     .map(([feature]) => feature);
-    
-  // Extract sizes
-  const sizeMatches = text.match(SIZE_PATTERN) || [];
-  const watchSizes = [...new Set(sizeMatches.map(s => s.toLowerCase()))];
+  
+  // Extract sizes - look for patterns like "41mm", "40 44mm", "45 42"
+  const watchSizes: string[] = [];
+  const sizeMatches = text.match(/\b(\d{2})\s*(?:mm)?\b/g) || [];
+  sizeMatches.forEach(match => {
+    const num = match.replace(/\D/g, '');
+    // Valid watch sizes are typically 38-49mm
+    if (['38', '40', '41', '42', '44', '45', '46', '47', '49'].includes(num)) {
+      watchSizes.push(`${num}mm`);
+    }
+  });
+  
+  // Extract series numbers
+  const seriesNumbers: string[] = [];
+  const seriesMatch = text.match(/series\s*(\d+(?:\s*[,\/&\s]+\d+)*)/gi);
+  if (seriesMatch) {
+    seriesMatch.forEach(m => {
+      const nums = m.match(/\d+/g);
+      if (nums) seriesNumbers.push(...nums);
+    });
+  }
+  
+  // Also check for iwatch series pattern
+  const iwatchMatch = text.match(/iwatch\s*(?:series\s*)?(\d+(?:\s*[,\/&\s]+\d+)*)/gi);
+  if (iwatchMatch) {
+    iwatchMatch.forEach(m => {
+      const nums = m.match(/\d+/g);
+      if (nums) seriesNumbers.push(...nums);
+    });
+  }
+  
+  // Check for standalone series numbers like "9 8 6 5"
+  const standaloneSeriesMatch = text.match(/(?:series|iwatch)\s*[\d\s,\/&]+/gi);
+  if (standaloneSeriesMatch) {
+    standaloneSeriesMatch.forEach(m => {
+      const nums = m.match(/\d+/g);
+      if (nums) {
+        nums.forEach(n => {
+          if (parseInt(n) <= 11 && parseInt(n) >= 1) {
+            seriesNumbers.push(n);
+          }
+        });
+      }
+    });
+  }
   
   return {
     materials,
@@ -87,7 +131,8 @@ export function analyzeProduct(title: string, description?: string): ProductAnal
     isLuxury: features.includes('luxury'),
     isCasual: features.includes('casual'),
     hasQuickRelease: features.includes('quickRelease'),
-    watchSizes,
+    watchSizes: [...new Set(watchSizes)],
+    seriesNumbers: [...new Set(seriesNumbers)].sort((a, b) => parseInt(a) - parseInt(b)),
   };
 }
 
@@ -96,22 +141,54 @@ export function analyzeProduct(title: string, description?: string): ProductAnal
  */
 export function getCompatibilityText(title: string, description?: string): string {
   const analysis = analyzeProduct(title, description);
+  const text = `${title} ${description || ''}`.toLowerCase();
+  
+  // Check for SE mention
+  const hasSE = /\bse\b/i.test(text);
+  // Check for Ultra mention
+  const hasUltra = /\bultra\b/i.test(text);
   
   // Apple Watch specific
   if (analysis.brands.includes('apple')) {
     const sizes = analysis.watchSizes;
+    const series = analysis.seriesNumbers;
+    
+    let seriesText = '';
     let sizeText = '';
     
-    // Group sizes into categories
-    const smallSizes = sizes.filter(s => ['38mm', '40mm', '41mm'].some(sz => s.includes(sz.replace('mm', ''))));
-    const largeSizes = sizes.filter(s => ['42mm', '44mm', '45mm', '49mm'].some(sz => s.includes(sz.replace('mm', ''))));
-    
-    if (smallSizes.length > 0 || largeSizes.length > 0) {
-      const sizeList = [...new Set([...smallSizes, ...largeSizes])].join(', ');
-      sizeText = ` (${sizeList})`;
+    // Build series text from extracted numbers
+    if (series.length > 0) {
+      const seriesNums = series.map(s => parseInt(s)).filter(n => n >= 1 && n <= 11);
+      if (seriesNums.length > 0) {
+        // Check if it's a range or individual numbers
+        const min = Math.min(...seriesNums);
+        const max = Math.max(...seriesNums);
+        if (seriesNums.length >= 3 && max - min === seriesNums.length - 1) {
+          seriesText = `Series ${min}-${max}`;
+        } else {
+          seriesText = `Series ${seriesNums.join('/')}`;
+        }
+      }
+    } else {
+      seriesText = 'Series 1-11';
     }
     
-    return `Apple Watch Series 1-11, SE, Ultra 1/2${sizeText}`;
+    // Add SE if mentioned
+    if (hasSE) {
+      seriesText += ', SE';
+    }
+    
+    // Add Ultra if mentioned
+    if (hasUltra) {
+      seriesText += ', Ultra';
+    }
+    
+    // Build size text
+    if (sizes.length > 0) {
+      sizeText = ` (${sizes.join('/')})`;
+    }
+    
+    return `Apple Watch ${seriesText}${sizeText}`;
   }
   
   // Samsung specific
