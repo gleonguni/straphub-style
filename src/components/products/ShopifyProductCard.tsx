@@ -60,13 +60,16 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
   );
   const hasFreeShipping = price >= 25;
   
-  // Extract unique colors from variants
+  // Extract unique colors from variants - check multiple possible option names
   const uniqueColors = Array.from(new Set(
     node.variants.edges
       .flatMap(v => v.node.selectedOptions || [])
-      .filter(opt => opt.name.toLowerCase() === 'color')
+      .filter(opt => {
+        const name = opt.name.toLowerCase();
+        return name === 'color' || name === 'colour' || name === 'style' || name.includes('color');
+      })
       .map(opt => opt.value)
-  )).slice(0, 5);
+  )).slice(0, 4);
   
   // Find variant matching selected color filter
   const matchingVariant = selectedColor
@@ -156,20 +159,15 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
         )}
         
         {uniqueColors.length > 1 && (
-          <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+          <div className="absolute bottom-3 left-3 flex items-center gap-1">
             {uniqueColors.map((color, index) => (
               <div
                 key={index}
-                className="w-4 h-4 rounded-full border border-white/50 shadow-sm"
+                className="w-3.5 h-3.5 rounded-full border border-black/30 shadow-sm"
                 style={{ backgroundColor: getColorValue(color) }}
                 title={color}
               />
             ))}
-            {uniqueColors.length < node.variants.edges.length && (
-              <span className="text-xs text-white bg-black/50 px-1.5 py-0.5 rounded">
-                +more
-              </span>
-            )}
           </div>
         )}
       </Link>
