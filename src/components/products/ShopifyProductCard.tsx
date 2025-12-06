@@ -181,11 +181,11 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
         )}
         
         {uniqueColors.length > 1 && (
-          <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 flex items-center gap-0.5 md:gap-1">
+          <div className="absolute bottom-3 left-3 hidden md:flex items-center gap-1">
             {uniqueColors.map((color, index) => (
               <div
                 key={index}
-                className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-full border border-black/20 shadow-sm ring-1 ring-white/50"
+                className="w-3.5 h-3.5 rounded-full border border-black/20 shadow-sm ring-1 ring-white/50"
                 style={getColorStyle(color)}
                 title={color}
               />
