@@ -214,23 +214,23 @@ const Product = () => {
     const hasHtml = /<[^>]+>/.test(description);
     
     if (hasHtml) {
-      // Return formatted HTML with proper styling - enhanced prose
+      // Return formatted HTML with proper styling - matching policy pages
       return (
         <div 
-          className="prose prose-sm max-w-none text-foreground/80
-            [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-foreground [&_h1]:mt-6 [&_h1]:mb-3
-            [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-5 [&_h2]:mb-2
-            [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-4 [&_h3]:mb-2
-            [&_h4]:text-sm [&_h4]:font-semibold [&_h4]:text-foreground [&_h4]:mt-3 [&_h4]:mb-2
-            [&_p]:mb-4 [&_p]:leading-relaxed [&_p]:text-foreground/80
+          className="prose prose-lg max-w-none space-y-4
+            [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-foreground [&_h1]:mt-6 [&_h1]:mb-4
+            [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-6 [&_h2]:mb-4
+            [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-5 [&_h3]:mb-3
+            [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:text-foreground [&_h4]:mt-4 [&_h4]:mb-2
+            [&_p]:text-muted-foreground [&_p]:leading-relaxed [&_p]:mb-4
             [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2
             [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
-            [&_li]:text-foreground/80 [&_li]:leading-relaxed
+            [&_li]:text-muted-foreground [&_li]:leading-relaxed
             [&_strong]:text-foreground [&_strong]:font-semibold
             [&_b]:text-foreground [&_b]:font-semibold
             [&_em]:italic
-            [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary/80
-            [&_br]:block [&_br]:h-2
+            [&_a]:text-primary [&_a]:hover:underline
+            [&_br]:block [&_br]:h-3
             [&>*:first-child]:mt-0
             [&>*:last-child]:mb-0"
           dangerouslySetInnerHTML={{ __html: description }}
@@ -248,15 +248,15 @@ const Product = () => {
           
           // Check if it looks like a heading (short, ends with colon, or all caps)
           if (trimmed.length < 50 && (trimmed.endsWith(':') || trimmed === trimmed.toUpperCase())) {
-            return <h4 key={index} className="font-semibold text-foreground mt-4 mb-2 text-base">{trimmed}</h4>;
+            return <h4 key={index} className="font-semibold text-foreground mt-4 mb-2 text-lg">{trimmed}</h4>;
           }
           
           // Check if it's a bullet point
           if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
-            return <li key={index} className="ml-6 text-foreground/80 list-disc leading-relaxed">{trimmed.substring(1).trim()}</li>;
+            return <li key={index} className="ml-6 text-muted-foreground list-disc leading-relaxed">{trimmed.substring(1).trim()}</li>;
           }
           
-          return <p key={index} className="text-foreground/80 leading-relaxed">{trimmed}</p>;
+          return <p key={index} className="text-muted-foreground leading-relaxed">{trimmed}</p>;
         })}
       </div>
     );
