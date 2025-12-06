@@ -10,42 +10,62 @@ interface ShopifyProductCardProps {
   selectedColor?: string;
 }
 
-// Map color names to CSS colors
-const colorMap: Record<string, string> = {
-  gold: '#D4AF37',
-  silver: '#C0C0C0',
-  grey: '#808080',
-  gray: '#808080',
-  black: '#1a1a1a',
-  white: '#FFFFFF',
-  blue: '#3B82F6',
-  navy: '#1e3a5a',
-  red: '#EF4444',
-  pink: '#EC4899',
-  purple: '#8B5CF6',
-  green: '#22C55E',
-  brown: '#8B4513',
-  tan: '#D2B48C',
-  beige: '#F5F5DC',
-  orange: '#F97316',
-  yellow: '#EAB308',
-  rose: '#FB7185',
-  'rose gold': '#B76E79',
-  rosegold: '#B76E79',
-  starlight: '#F5F5DC',
-  midnight: '#191970',
-  graphite: '#383838',
-  space: '#1a1a1a',
+// Map color names to CSS gradient colors for premium look
+const colorMap: Record<string, { base: string; gradient: string }> = {
+  gold: { base: '#D4AF37', gradient: 'linear-gradient(135deg, #F5D76E 0%, #D4AF37 50%, #AA8C2C 100%)' },
+  silver: { base: '#C0C0C0', gradient: 'linear-gradient(135deg, #E8E8E8 0%, #C0C0C0 50%, #A0A0A0 100%)' },
+  grey: { base: '#808080', gradient: 'linear-gradient(135deg, #9A9A9A 0%, #808080 50%, #666666 100%)' },
+  gray: { base: '#808080', gradient: 'linear-gradient(135deg, #9A9A9A 0%, #808080 50%, #666666 100%)' },
+  black: { base: '#1a1a1a', gradient: 'linear-gradient(135deg, #3a3a3a 0%, #1a1a1a 50%, #000000 100%)' },
+  white: { base: '#FFFFFF', gradient: 'linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 50%, #E8E8E8 100%)' },
+  blue: { base: '#3B82F6', gradient: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #2563EB 100%)' },
+  navy: { base: '#1e3a5a', gradient: 'linear-gradient(135deg, #2d4a6a 0%, #1e3a5a 50%, #0f2a4a 100%)' },
+  red: { base: '#EF4444', gradient: 'linear-gradient(135deg, #F87171 0%, #EF4444 50%, #DC2626 100%)' },
+  pink: { base: '#EC4899', gradient: 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #DB2777 100%)' },
+  purple: { base: '#8B5CF6', gradient: 'linear-gradient(135deg, #A78BFA 0%, #8B5CF6 50%, #7C3AED 100%)' },
+  green: { base: '#22C55E', gradient: 'linear-gradient(135deg, #4ADE80 0%, #22C55E 50%, #16A34A 100%)' },
+  brown: { base: '#8B4513', gradient: 'linear-gradient(135deg, #A0522D 0%, #8B4513 50%, #6B3410 100%)' },
+  tan: { base: '#D2B48C', gradient: 'linear-gradient(135deg, #E0C9A6 0%, #D2B48C 50%, #C4A672 100%)' },
+  beige: { base: '#F5F5DC', gradient: 'linear-gradient(135deg, #FFFFF0 0%, #F5F5DC 50%, #E5E5CC 100%)' },
+  orange: { base: '#F97316', gradient: 'linear-gradient(135deg, #FB923C 0%, #F97316 50%, #EA580C 100%)' },
+  yellow: { base: '#EAB308', gradient: 'linear-gradient(135deg, #FACC15 0%, #EAB308 50%, #CA8A04 100%)' },
+  rose: { base: '#FB7185', gradient: 'linear-gradient(135deg, #FDA4AF 0%, #FB7185 50%, #F43F5E 100%)' },
+  'rose gold': { base: '#B76E79', gradient: 'linear-gradient(135deg, #D4A5A5 0%, #B76E79 50%, #9A5A64 100%)' },
+  rosegold: { base: '#B76E79', gradient: 'linear-gradient(135deg, #D4A5A5 0%, #B76E79 50%, #9A5A64 100%)' },
+  starlight: { base: '#F5F5DC', gradient: 'linear-gradient(135deg, #FFFFF5 0%, #F5F5DC 50%, #E8E8D0 100%)' },
+  midnight: { base: '#191970', gradient: 'linear-gradient(135deg, #2a2a80 0%, #191970 50%, #0a0a60 100%)' },
+  graphite: { base: '#383838', gradient: 'linear-gradient(135deg, #505050 0%, #383838 50%, #202020 100%)' },
+  space: { base: '#1a1a1a', gradient: 'linear-gradient(135deg, #3a3a3a 0%, #1a1a1a 50%, #000000 100%)' },
+  natural: { base: '#C4A77D', gradient: 'linear-gradient(135deg, #D4B78D 0%, #C4A77D 50%, #B4976D 100%)' },
+  cream: { base: '#FFFDD0', gradient: 'linear-gradient(135deg, #FFFFF0 0%, #FFFDD0 50%, #F5F3C0 100%)' },
+  olive: { base: '#808000', gradient: 'linear-gradient(135deg, #9A9A00 0%, #808000 50%, #666600 100%)' },
+  teal: { base: '#008080', gradient: 'linear-gradient(135deg, #00A0A0 0%, #008080 50%, #006060 100%)' },
+  burgundy: { base: '#800020', gradient: 'linear-gradient(135deg, #A00030 0%, #800020 50%, #600010 100%)' },
+  coral: { base: '#FF7F50', gradient: 'linear-gradient(135deg, #FF9F70 0%, #FF7F50 50%, #E56030 100%)' },
+  mint: { base: '#98FF98', gradient: 'linear-gradient(135deg, #B8FFB8 0%, #98FF98 50%, #78DF78 100%)' },
+  lavender: { base: '#E6E6FA', gradient: 'linear-gradient(135deg, #F0F0FF 0%, #E6E6FA 50%, #D6D6EA 100%)' },
+  charcoal: { base: '#36454F', gradient: 'linear-gradient(135deg, #46555F 0%, #36454F 50%, #26353F 100%)' },
+  copper: { base: '#B87333', gradient: 'linear-gradient(135deg, #D89050 0%, #B87333 50%, #985020 100%)' },
 };
 
-const getColorValue = (colorName: string): string => {
-  const lowerColor = colorName.toLowerCase();
-  for (const [key, value] of Object.entries(colorMap)) {
+const getColorStyle = (colorName: string): { background: string } => {
+  const lowerColor = colorName.toLowerCase().trim();
+  
+  // Direct match first
+  if (colorMap[lowerColor]) {
+    return { background: colorMap[lowerColor].gradient };
+  }
+  
+  // Partial match - prioritize longer matches first
+  const sortedKeys = Object.keys(colorMap).sort((a, b) => b.length - a.length);
+  for (const key of sortedKeys) {
     if (lowerColor.includes(key)) {
-      return value;
+      return { background: colorMap[key].gradient };
     }
   }
-  return '#888888';
+  
+  // Fallback gradient
+  return { background: 'linear-gradient(135deg, #9A9A9A 0%, #888888 50%, #666666 100%)' };
 };
 
 export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCardProps) {
@@ -159,12 +179,12 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
         )}
         
         {uniqueColors.length > 1 && (
-          <div className="absolute bottom-3 left-3 flex items-center gap-1">
+          <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 flex items-center gap-0.5 md:gap-1">
             {uniqueColors.map((color, index) => (
               <div
                 key={index}
-                className="w-3.5 h-3.5 rounded-full border border-black/30 shadow-sm"
-                style={{ backgroundColor: getColorValue(color) }}
+                className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-full border border-black/20 shadow-sm ring-1 ring-white/50"
+                style={getColorStyle(color)}
                 title={color}
               />
             ))}
