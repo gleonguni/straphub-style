@@ -29,8 +29,8 @@ const PageTransition = ({ children }: { children: ReactNode }) => {
 
   return (
     <div
-      className={`transition-opacity duration-250 ease-out ${
-        isTransitioning ? "opacity-0" : "opacity-100"
+      className={`transition-opacity duration-350 ease-out ${
+        isTransitioning ? "opacity-70" : "opacity-100"
       }`}
     >
       {children}
