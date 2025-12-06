@@ -424,6 +424,7 @@ const Collection = () => {
                       <ShopifyProductCard
                         key={product.node.id}
                         product={product}
+                        selectedColor={selectedFilters.color?.[0]}
                       />
                     ))}
                   </div>

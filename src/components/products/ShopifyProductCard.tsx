@@ -7,9 +7,10 @@ import { toast } from "sonner";
 
 interface ShopifyProductCardProps {
   product: ShopifyProduct;
+  selectedColor?: string;
 }
 
-export function ShopifyProductCard({ product }: ShopifyProductCardProps) {
+export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const { node } = product;
   
@@ -20,8 +21,34 @@ export function ShopifyProductCard({ product }: ShopifyProductCardProps) {
     compareAtPrice
   );
   const hasFreeShipping = price >= 25;
-  const firstVariant = node.variants.edges[0]?.node;
-  const image = node.images.edges[0]?.node.url || '/placeholder.svg';
+  
+  // Find variant matching selected color filter
+  const matchingVariant = selectedColor
+    ? node.variants.edges.find(v => 
+        v.node.title.toLowerCase().includes(selectedColor.toLowerCase()) ||
+        v.node.selectedOptions?.some(opt => 
+          opt.name.toLowerCase() === 'color' && 
+          opt.value.toLowerCase().includes(selectedColor.toLowerCase())
+        )
+      )?.node
+    : null;
+  
+  const firstVariant = matchingVariant || node.variants.edges[0]?.node;
+  
+  // Find image for the matching variant or use default
+  const getProductImage = () => {
+    if (matchingVariant && node.images.edges.length > 1) {
+      // Try to find an image that matches the variant color
+      const variantImage = node.images.edges.find(img => 
+        img.node.altText?.toLowerCase().includes(selectedColor?.toLowerCase() || '') ||
+        img.node.url.toLowerCase().includes(selectedColor?.toLowerCase() || '')
+      );
+      if (variantImage) return variantImage.node.url;
+    }
+    return node.images.edges[0]?.node.url || '/placeholder.svg';
+  };
+  
+  const image = getProductImage();
   const imageAlt = node.images.edges[0]?.node.altText || node.title;
 
   const handleQuickAdd = (e: React.MouseEvent) => {
@@ -71,7 +98,7 @@ export function ShopifyProductCard({ product }: ShopifyProductCardProps) {
           <div className="absolute top-3 right-3">
             <span className="badge-free-shipping flex items-center gap-1">
               <Truck className="w-3 h-3" />
-              Free Ship
+              Free Shipping
             </span>
           </div>
         )}
