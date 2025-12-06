@@ -196,7 +196,7 @@ const Collection = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [gridSize, setGridSize] = useState<"large" | "small">("large");
-  const [expandedFilter, setExpandedFilter] = useState<string | null>("brand");
+  const [expandedFilter, setExpandedFilter] = useState<string | null>(null);
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({});
   const [sortBy, setSortBy] = useState("featured");
 
@@ -204,6 +204,34 @@ const Collection = () => {
   const { data: products, isLoading, error } = useShopifyProducts(50);
   
   const collectionName = collectionNames[slug] || "All Straps";
+
+  // Determine which filters to hide based on current collection
+  const isBrandCollection = Object.keys(brandFilters).includes(slug);
+  const isMaterialCollection = Object.keys(materialFilters).includes(slug);
+  
+  // Build available filter options dynamically
+  const availableFilterOptions = useMemo(() => {
+    const options: Record<string, string[]> = {};
+    
+    // Only show brand filter if NOT on a brand-specific collection
+    if (!isBrandCollection && slug !== "all") {
+      options.brand = filterOptions.brand;
+    } else if (slug === "all") {
+      options.brand = filterOptions.brand;
+    }
+    
+    // Only show material filter if NOT on a material-specific collection
+    if (!isMaterialCollection) {
+      options.material = filterOptions.material;
+    }
+    
+    // Always show these filters
+    options.size = filterOptions.size;
+    options.color = filterOptions.color;
+    options.price = filterOptions.price;
+    
+    return options;
+  }, [slug, isBrandCollection, isMaterialCollection]);
 
   // Filter and sort products
   const displayedProducts = useMemo(() => {
@@ -272,7 +300,7 @@ const Collection = () => {
                     )}
                   </div>
                   
-                  {Object.entries(filterOptions).map(([key, options]) => (
+                  {Object.entries(availableFilterOptions).map(([key, options]) => (
                     <div key={key} className="filter-section">
                       <button
                         className="flex items-center justify-between w-full py-2 font-medium capitalize"
@@ -423,7 +451,7 @@ const Collection = () => {
             </div>
             
             <div className="flex-1 overflow-y-auto p-4">
-              {Object.entries(filterOptions).map(([key, options]) => (
+              {Object.entries(availableFilterOptions).map(([key, options]) => (
                 <div key={key} className="filter-section">
                   <button
                     className="flex items-center justify-between w-full py-2 font-medium capitalize"
