@@ -62,6 +62,12 @@
     /* Trust Section */
     --trust-bg: 220 15% 97%;
 
+    /* Product Gallery Background */
+    --gallery-bg: 220 15% 97%;
+    
+    /* Filter Sidebar Background */
+    --filter-bg: 220 15% 98%;
+
     /* Sidebar */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 220 10% 30%;
@@ -126,6 +132,12 @@
     --announcement-foreground: 220 20% 8%;
 
     --trust-bg: 220 15% 12%;
+
+    /* Product Gallery Background */
+    --gallery-bg: 220 15% 12%;
+    
+    /* Filter Sidebar Background */
+    --filter-bg: 220 15% 14%;
 
     --sidebar-background: 220 20% 10%;
     --sidebar-foreground: 220 10% 80%;

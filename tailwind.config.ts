@@ -80,6 +80,8 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        gallery: "hsl(var(--gallery-bg))",
+        filter: "hsl(var(--filter-bg))",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -115,6 +117,10 @@ export default {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(100%)" },
         },
+        "scale-in": {
+          from: { transform: "scale(0)", opacity: "0" },
+          to: { transform: "scale(1)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -123,6 +129,7 @@ export default {
         "fade-up": "fade-up 0.5s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
         "slide-out-right": "slide-out-right 0.3s ease-out",
+        "scale-in": "scale-in 0.2s ease-out",
       },
     },
   },

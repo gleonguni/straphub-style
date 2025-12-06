@@ -1,33 +1,39 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Truck, RefreshCw, Shield, ChevronDown, ChevronLeft, ChevronRight, Loader2, Check, X, ThumbsUp, ThumbsDown, Clock, Leaf, Package } from "lucide-react";
+import { Truck, RefreshCw, Shield, ChevronDown, ChevronLeft, ChevronRight, Loader2, Check, X, Clock, Leaf } from "lucide-react";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/layout/CartDrawer";
 import { TrustGuaranteeSection } from "@/components/home/TrustGuaranteeSection";
 import { Button } from "@/components/ui/button";
+import { AddToCartButton } from "@/components/AddToCartButton";
 import { cn } from "@/lib/utils";
 import { useShopifyProduct, useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { useCartStore } from "@/stores/cartStore";
 import { formatPrice, calculateDiscount, CartItem } from "@/lib/shopify";
-import { toast } from "sonner";
 
-// Countdown timer hook
+// Countdown timer hook - only active between 7am and 8pm
 function useCountdown() {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date();
+      const currentHour = now.getHours();
+      
+      // Only show countdown between 7am (7) and 8pm (20)
+      if (currentHour < 7 || currentHour >= 20) {
+        setIsActive(false);
+        return { hours: 0, minutes: 0, seconds: 0 };
+      }
+      
+      setIsActive(true);
+      
       const cutoff = new Date();
       cutoff.setHours(20, 0, 0, 0); // 8pm cutoff
-
-      // If past 8pm, set cutoff to next day
-      if (now > cutoff) {
-        cutoff.setDate(cutoff.getDate() + 1);
-      }
 
       const diff = cutoff.getTime() - now.getTime();
       const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -42,7 +48,7 @@ function useCountdown() {
     return () => clearInterval(timer);
   }, []);
 
-  return timeLeft;
+  return { ...timeLeft, isActive };
 }
 
 const Product = () => {
@@ -175,11 +181,8 @@ const Product = () => {
   const hasFreeShipping = parseFloat(price) >= 25;
   const isInStock = selectedVariant?.availableForSale ?? true;
 
-  const handleAddToCart = () => {
-    if (!selectedVariant) {
-      toast.error("Please select a variant");
-      return;
-    }
+  const handleAddToCart = useCallback(() => {
+    if (!selectedVariant) return;
 
     const cartItem: CartItem = {
       product: { node: product },
@@ -191,11 +194,7 @@ const Product = () => {
     };
 
     addItem(cartItem);
-    toast.success("Added to cart", {
-      description: product.title,
-      position: "top-center",
-    });
-  };
+  }, [selectedVariant, product, addItem]);
 
   // Get variant image for color swatches
   const getVariantImage = (optionValue: string, optionName: string) => {
@@ -213,20 +212,25 @@ const Product = () => {
     const hasHtml = /<[^>]+>/.test(description);
     
     if (hasHtml) {
-      // Return formatted HTML with proper styling
+      // Return formatted HTML with proper styling - enhanced prose
       return (
         <div 
-          className="prose prose-sm max-w-none text-muted-foreground
-            [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-foreground [&_h1]:mt-4 [&_h1]:mb-2
-            [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-4 [&_h2]:mb-2
-            [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-3 [&_h3]:mb-2
-            [&_h4]:text-sm [&_h4]:font-semibold [&_h4]:text-foreground [&_h4]:mt-3 [&_h4]:mb-1
-            [&_p]:mb-3 [&_p]:leading-relaxed
-            [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ul]:space-y-1
-            [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_ol]:space-y-1
-            [&_li]:text-muted-foreground
+          className="prose prose-sm max-w-none text-foreground/80
+            [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-foreground [&_h1]:mt-6 [&_h1]:mb-3
+            [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-5 [&_h2]:mb-2
+            [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-4 [&_h3]:mb-2
+            [&_h4]:text-sm [&_h4]:font-semibold [&_h4]:text-foreground [&_h4]:mt-3 [&_h4]:mb-2
+            [&_p]:mb-4 [&_p]:leading-relaxed [&_p]:text-foreground/80
+            [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2
+            [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
+            [&_li]:text-foreground/80 [&_li]:leading-relaxed
             [&_strong]:text-foreground [&_strong]:font-semibold
-            [&_br]:block [&_br]:mb-2"
+            [&_b]:text-foreground [&_b]:font-semibold
+            [&_em]:italic
+            [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary/80
+            [&_br]:block [&_br]:h-2
+            [&>*:first-child]:mt-0
+            [&>*:last-child]:mb-0"
           dangerouslySetInnerHTML={{ __html: description }}
         />
       );
@@ -236,21 +240,21 @@ const Product = () => {
     const lines = description.split(/\n+/).filter(line => line.trim());
     
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         {lines.map((line, index) => {
           const trimmed = line.trim();
           
           // Check if it looks like a heading (short, ends with colon, or all caps)
           if (trimmed.length < 50 && (trimmed.endsWith(':') || trimmed === trimmed.toUpperCase())) {
-            return <h4 key={index} className="font-semibold text-foreground mt-4 mb-2">{trimmed}</h4>;
+            return <h4 key={index} className="font-semibold text-foreground mt-4 mb-2 text-base">{trimmed}</h4>;
           }
           
           // Check if it's a bullet point
           if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
-            return <li key={index} className="ml-4 text-muted-foreground list-disc">{trimmed.substring(1).trim()}</li>;
+            return <li key={index} className="ml-6 text-foreground/80 list-disc leading-relaxed">{trimmed.substring(1).trim()}</li>;
           }
           
-          return <p key={index} className="text-muted-foreground leading-relaxed">{trimmed}</p>;
+          return <p key={index} className="text-foreground/80 leading-relaxed">{trimmed}</p>;
         })}
       </div>
     );
@@ -269,7 +273,7 @@ const Product = () => {
   const mainProductImage = filteredImages[0]?.node.url || '/placeholder.svg';
 
   // Handle quick add for related products
-  const handleQuickAdd = (relatedProduct: typeof relatedProducts[0]) => {
+  const handleQuickAdd = useCallback((relatedProduct: typeof relatedProducts[0]) => {
     const firstVariant = relatedProduct.node.variants.edges[0]?.node;
     if (!firstVariant) return;
 
@@ -283,11 +287,7 @@ const Product = () => {
     };
 
     addItem(cartItem);
-    toast.success("Added to cart", {
-      description: relatedProduct.node.title,
-      position: "top-center",
-    });
-  };
+  }, [addItem]);
 
   return (
     <>
@@ -316,10 +316,10 @@ const Product = () => {
           <div className="container pb-16 overflow-hidden">
             <div className="grid lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12">
               {/* Image Gallery */}
-              <div className="space-y-4">
+              <div className="space-y-4 bg-gallery rounded-2xl p-4 lg:p-6">
                 {/* Mobile Carousel */}
                 <div className="md:hidden relative">
-                  <div className="aspect-square bg-muted rounded-xl overflow-hidden">
+                  <div className="aspect-square bg-background rounded-xl overflow-hidden">
                     <img 
                       src={filteredImages[mobileImageIndex]?.node.url || '/placeholder.svg'}
                       alt={filteredImages[mobileImageIndex]?.node.altText || product.title}
@@ -358,7 +358,7 @@ const Product = () => {
 
                 {/* Desktop Gallery */}
                 <div className="hidden md:block">
-                  <div className="aspect-square bg-muted rounded-xl overflow-hidden border border-border">
+                  <div className="aspect-square bg-background rounded-xl overflow-hidden border border-border">
                     <img 
                       src={filteredImages[selectedImage]?.node.url || '/placeholder.svg'}
                       alt={filteredImages[selectedImage]?.node.altText || product.title}
@@ -372,7 +372,7 @@ const Product = () => {
                           key={index}
                           onClick={() => setSelectedImage(index)}
                           className={cn(
-                            "aspect-square rounded-lg overflow-hidden border-2 transition-all",
+                            "aspect-square rounded-lg overflow-hidden border-2 transition-all bg-background",
                             selectedImage === index 
                               ? "border-primary ring-2 ring-primary/20" 
                               : "border-border hover:border-primary/50"
@@ -499,17 +499,13 @@ const Product = () => {
                 )}
 
                 {/* Add to Cart */}
-                <Button 
-                  size="lg" 
-                  className={cn(
-                    "w-full mb-4",
-                    isInStock ? "bg-success hover:bg-success/90" : "bg-muted text-muted-foreground"
-                  )}
-                  onClick={handleAddToCart}
-                  disabled={!isInStock}
-                >
-                  {isInStock ? "Add to Cart" : "Out of Stock"}
-                </Button>
+                <div className="mb-4">
+                  <AddToCartButton
+                    onClick={handleAddToCart}
+                    disabled={!selectedVariant}
+                    isInStock={isInStock}
+                  />
+                </div>
 
                 {/* Compatible With Badge */}
                 <div className="flex items-center gap-3 p-3 bg-muted rounded-lg mb-4">
@@ -519,30 +515,42 @@ const Product = () => {
                   <div>
                     <p className="text-xs text-muted-foreground">This product is compatible with</p>
                     <p className="text-sm font-medium text-success">
-                      {product.title.toLowerCase().includes('apple') ? 'Apple Watch' : 
-                       product.title.toLowerCase().includes('samsung') ? 'Samsung Galaxy Watch' :
-                       product.title.toLowerCase().includes('garmin') ? 'Garmin Watches' :
-                       'Multiple Watch Brands'}
+                      {product.title.toLowerCase().includes('apple') 
+                        ? 'Apple Watch (Series 1 to 11 — Ultra 1/2/3 — SE)' 
+                        : product.title.toLowerCase().includes('samsung') 
+                        ? 'Samsung Galaxy Watch' 
+                        : product.title.toLowerCase().includes('garmin') 
+                        ? 'Garmin Watches' 
+                        : 'Multiple Watch Brands'}
                     </p>
                   </div>
                 </div>
 
-                {/* Promotional Box with Countdown */}
+                {/* Promotional Box with Countdown - Only show between 7am-8pm */}
                 <div className="bg-sale/15 border border-sale/40 rounded-lg p-3 md:p-4 mb-6 overflow-hidden">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2 text-sale font-semibold text-sm md:text-base">
-                      <Clock className="w-4 h-4 flex-shrink-0" />
-                      <span>Same day shipping?</span>
+                  {countdown.isActive ? (
+                    <>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 text-sale font-semibold text-sm md:text-base">
+                          <Clock className="w-4 h-4 flex-shrink-0" />
+                          <span>Same day shipping?</span>
+                        </div>
+                        <div className="flex items-center gap-1 bg-background rounded px-2 py-1 w-fit">
+                          <span className="font-mono text-xs md:text-sm font-bold">{String(countdown.hours).padStart(2, '0')}</span>
+                          <span className="text-muted-foreground">:</span>
+                          <span className="font-mono text-xs md:text-sm font-bold">{String(countdown.minutes).padStart(2, '0')}</span>
+                          <span className="text-muted-foreground">:</span>
+                          <span className="font-mono text-xs md:text-sm font-bold">{String(countdown.seconds).padStart(2, '0')}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs md:text-sm text-foreground mb-1">Order within the countdown for same-day dispatch!</p>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sale font-semibold text-sm md:text-base mb-3">
+                      <Truck className="w-4 h-4 flex-shrink-0" />
+                      <span>Order before 8pm for same-day dispatch</span>
                     </div>
-                    <div className="flex items-center gap-1 bg-background rounded px-2 py-1 w-fit">
-                      <span className="font-mono text-xs md:text-sm font-bold">{String(countdown.hours).padStart(2, '0')}</span>
-                      <span className="text-muted-foreground">:</span>
-                      <span className="font-mono text-xs md:text-sm font-bold">{String(countdown.minutes).padStart(2, '0')}</span>
-                      <span className="text-muted-foreground">:</span>
-                      <span className="font-mono text-xs md:text-sm font-bold">{String(countdown.seconds).padStart(2, '0')}</span>
-                    </div>
-                  </div>
-                  <p className="text-xs md:text-sm text-foreground mb-1">Order within the countdown for same-day dispatch!</p>
+                  )}
                   <div className="space-y-2 mt-3">
                     <div className="flex items-center gap-2 text-xs md:text-sm">
                       <Truck className="w-4 h-4 text-success flex-shrink-0" />
