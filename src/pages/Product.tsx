@@ -728,8 +728,8 @@ const Product = () => {
                           const relatedDiscount = calculateDiscount(relatedPrice, relatedCompareAt);
                           
                           return (
-                            <div key={relatedProduct.node.id} className="flex gap-3 p-2 border border-border rounded-lg">
-                              <Link to={`/products/${relatedProduct.node.handle}`} className="w-16 h-16 flex-shrink-0">
+                            <div key={relatedProduct.node.id} className="flex items-center gap-3 p-2 border border-border rounded-lg">
+                              <Link to={`/products/${relatedProduct.node.handle}`} className="w-14 h-14 flex-shrink-0">
                                 <img 
                                   src={relatedProduct.node.images.edges[0]?.node.url || '/placeholder.svg'} 
                                   alt={relatedProduct.node.title}
@@ -738,16 +738,16 @@ const Product = () => {
                               </Link>
                               <div className="flex-1 min-w-0">
                                 <Link to={`/products/${relatedProduct.node.handle}`}>
-                                  <p className="text-sm font-medium truncate hover:text-primary">
+                                  <p className="text-xs font-medium line-clamp-2 hover:text-primary leading-tight">
                                     {relatedProduct.node.title}
                                   </p>
                                 </Link>
-                                <div className="flex items-center gap-2">
-                                  <span className={cn("text-sm font-semibold", relatedDiscount > 0 && "text-success")}>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <span className={cn("text-xs font-semibold", relatedDiscount > 0 && "text-success")}>
                                     {formatPrice(relatedPrice)}
                                   </span>
                                   {relatedCompareAt && parseFloat(relatedCompareAt) > parseFloat(relatedPrice) && (
-                                    <span className="text-xs text-muted-foreground line-through">
+                                    <span className="text-[10px] text-muted-foreground line-through">
                                       {formatPrice(relatedCompareAt)}
                                     </span>
                                   )}
@@ -755,9 +755,8 @@ const Product = () => {
                               </div>
                               <AddToCartButton
                                 onClick={() => handleQuickAdd(relatedProduct)}
-                                size="sm"
-                                className="flex-shrink-0 self-center text-xs px-3"
-                                label="Add to order"
+                                variant="icon"
+                                className="flex-shrink-0"
                               />
                             </div>
                           );
