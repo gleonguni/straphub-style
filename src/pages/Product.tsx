@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useShopifyProduct, useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { useCartStore } from "@/stores/cartStore";
 import { formatPrice, calculateDiscount, CartItem } from "@/lib/shopify";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
 
 // Countdown timer hook - only active between 7am and 8pm
 function useCountdown() {
@@ -52,6 +53,7 @@ function useCountdown() {
 }
 
 const Product = () => {
+  useScrollToTop();
   const { id } = useParams();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
