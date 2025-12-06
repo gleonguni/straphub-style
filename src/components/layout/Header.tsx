@@ -112,10 +112,13 @@ export function Header({ cartCount = 0, onCartClick }: HeaderProps) {
               onMouseEnter={handleMegaMenuEnter}
               onMouseLeave={handleMegaMenuLeave}
             >
-              <button className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors py-4">
+              <Link 
+                to="/collections/all"
+                className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors py-4"
+              >
                 All Straps
                 <ChevronDown className={cn("w-4 h-4 transition-transform", isMegaMenuOpen && "rotate-180")} />
-              </button>
+              </Link>
               
               {/* Mega Menu - Positioned relative to trigger */}
               <div 
@@ -201,10 +204,13 @@ export function Header({ cartCount = 0, onCartClick }: HeaderProps) {
               onMouseEnter={handleAccessoriesEnter}
               onMouseLeave={handleAccessoriesLeave}
             >
-              <button className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors py-4">
+              <Link 
+                to="/collections/accessories"
+                className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors py-4"
+              >
                 Accessories
                 <ChevronDown className={cn("w-4 h-4 transition-transform", isAccessoriesOpen && "rotate-180")} />
-              </button>
+              </Link>
               
               <div 
                 className={cn(
