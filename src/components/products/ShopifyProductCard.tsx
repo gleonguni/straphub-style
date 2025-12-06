@@ -10,6 +10,44 @@ interface ShopifyProductCardProps {
   selectedColor?: string;
 }
 
+// Map color names to CSS colors
+const colorMap: Record<string, string> = {
+  gold: '#D4AF37',
+  silver: '#C0C0C0',
+  grey: '#808080',
+  gray: '#808080',
+  black: '#1a1a1a',
+  white: '#FFFFFF',
+  blue: '#3B82F6',
+  navy: '#1e3a5a',
+  red: '#EF4444',
+  pink: '#EC4899',
+  purple: '#8B5CF6',
+  green: '#22C55E',
+  brown: '#8B4513',
+  tan: '#D2B48C',
+  beige: '#F5F5DC',
+  orange: '#F97316',
+  yellow: '#EAB308',
+  rose: '#FB7185',
+  'rose gold': '#B76E79',
+  rosegold: '#B76E79',
+  starlight: '#F5F5DC',
+  midnight: '#191970',
+  graphite: '#383838',
+  space: '#1a1a1a',
+};
+
+const getColorValue = (colorName: string): string => {
+  const lowerColor = colorName.toLowerCase();
+  for (const [key, value] of Object.entries(colorMap)) {
+    if (lowerColor.includes(key)) {
+      return value;
+    }
+  }
+  return '#888888';
+};
+
 export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const { node } = product;
@@ -21,6 +59,14 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
     compareAtPrice
   );
   const hasFreeShipping = price >= 25;
+  
+  // Extract unique colors from variants
+  const uniqueColors = Array.from(new Set(
+    node.variants.edges
+      .flatMap(v => v.node.selectedOptions || [])
+      .filter(opt => opt.name.toLowerCase() === 'color')
+      .map(opt => opt.value)
+  )).slice(0, 5);
   
   // Find variant matching selected color filter
   const matchingVariant = selectedColor
@@ -35,15 +81,23 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
   
   const firstVariant = matchingVariant || node.variants.edges[0]?.node;
   
-  // Find image for the matching variant or use default
+  // Find image for the matching variant
   const getProductImage = () => {
-    if (matchingVariant && node.images.edges.length > 1) {
-      // Try to find an image that matches the variant color
-      const variantImage = node.images.edges.find(img => 
-        img.node.altText?.toLowerCase().includes(selectedColor?.toLowerCase() || '') ||
-        img.node.url.toLowerCase().includes(selectedColor?.toLowerCase() || '')
-      );
-      if (variantImage) return variantImage.node.url;
+    if (selectedColor && node.images.edges.length > 0) {
+      const colorVariantImage = node.images.edges.find(img => {
+        const altText = img.node.altText?.toLowerCase() || '';
+        const url = img.node.url.toLowerCase();
+        const colorLower = selectedColor.toLowerCase();
+        return altText.includes(colorLower) || url.includes(colorLower);
+      });
+      if (colorVariantImage) return colorVariantImage.node.url;
+      
+      if (matchingVariant) {
+        const variantIndex = node.variants.edges.findIndex(v => v.node.id === matchingVariant.id);
+        if (variantIndex >= 0 && node.images.edges[variantIndex]) {
+          return node.images.edges[variantIndex].node.url;
+        }
+      }
     }
     return node.images.edges[0]?.node.url || '/placeholder.svg';
   };
@@ -78,7 +132,6 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
 
   return (
     <div className="product-card group bg-card rounded-lg overflow-hidden shadow-product">
-      {/* Image Container */}
       <Link to={`/products/${node.handle}`} className="relative block aspect-square bg-muted overflow-hidden">
         <img 
           src={image} 
@@ -87,7 +140,6 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
           loading="lazy"
         />
 
-        {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1">
           {discount > 0 && (
             <span className="badge-sale">Save {discount}%</span>
@@ -102,9 +154,26 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
             </span>
           </div>
         )}
+        
+        {uniqueColors.length > 1 && (
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+            {uniqueColors.map((color, index) => (
+              <div
+                key={index}
+                className="w-4 h-4 rounded-full border border-white/50 shadow-sm"
+                style={{ backgroundColor: getColorValue(color) }}
+                title={color}
+              />
+            ))}
+            {uniqueColors.length < node.variants.edges.length && (
+              <span className="text-xs text-white bg-black/50 px-1.5 py-0.5 rounded">
+                +more
+              </span>
+            )}
+          </div>
+        )}
       </Link>
 
-      {/* Quick Add Button */}
       <button 
         onClick={handleQuickAdd}
         className="quick-add bg-success text-success-foreground py-3 flex items-center justify-center gap-2 text-sm font-medium hover:bg-success/90 transition-colors"
@@ -113,7 +182,6 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
         Quick Add
       </button>
 
-      {/* Content */}
       <div className="p-4">
         <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
           {node.vendor || "StrapHub"}
