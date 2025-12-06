@@ -14,6 +14,7 @@ import { useShopifyProduct, useShopifyProducts } from "@/hooks/useShopifyProduct
 import { useCartStore } from "@/stores/cartStore";
 import { formatPrice, calculateDiscount, CartItem } from "@/lib/shopify";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
+import { getCompatibilityText, getProductProsAndCons, getMaterialDisplayName, getBrandDisplayName } from "@/lib/productUtils";
 
 // Countdown timer hook - only active between 7am and 8pm
 function useCountdown() {
@@ -532,21 +533,15 @@ const Product = () => {
                   />
                 </div>
 
-                {/* Compatible With Badge */}
+                {/* Compatible With Badge - Dynamic */}
                 <div className="flex items-center gap-3 p-3 bg-muted rounded-lg mb-4">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden border border-border">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden border border-border flex-shrink-0">
                     <img src={mainProductImage} alt="" className="w-full h-full object-cover" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">This product is compatible with</p>
-                    <p className="text-sm font-medium text-success">
-                      {product.title.toLowerCase().includes('apple') 
-                        ? 'Apple Watch (Series 1 to 11 — Ultra 1/2/3 — SE)' 
-                        : product.title.toLowerCase().includes('samsung') 
-                        ? 'Samsung Galaxy Watch' 
-                        : product.title.toLowerCase().includes('garmin') 
-                        ? 'Garmin Watches' 
-                        : 'Multiple Watch Brands'}
+                    <p className="text-sm font-medium text-success truncate">
+                      {getCompatibilityText(product.title, product.descriptionHtml || product.description)}
                     </p>
                   </div>
                 </div>
@@ -630,34 +625,25 @@ const Product = () => {
                   </div>
                 </div>
 
-                {/* Pros and Cons - Always Open */}
+                {/* Pros and Cons - Always Open, Dynamic */}
                 <div className="border-b border-border py-4">
                   <h3 className="font-medium mb-4">Pros & Cons</h3>
                   <div className="space-y-3">
-                    <div className="flex items-start gap-2">
-                      <span className="w-5 h-5 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Check className="w-3 h-3 text-success" />
-                      </span>
-                      <span className="text-sm">High-quality materials for lasting durability</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="w-5 h-5 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Check className="w-3 h-3 text-success" />
-                      </span>
-                      <span className="text-sm">Perfect fit guarantee with easy installation</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="w-5 h-5 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Check className="w-3 h-3 text-success" />
-                      </span>
-                      <span className="text-sm">Comfortable for all-day wear</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="w-5 h-5 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <X className="w-3 h-3 text-destructive" />
-                      </span>
-                      <span className="text-sm">May require break-in period for optimal comfort</span>
-                    </div>
+                    {getProductProsAndCons(product.title, product.descriptionHtml || product.description).map((item, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <span className={cn(
+                          "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+                          item.type === 'pro' ? "bg-success/20" : "bg-destructive/20"
+                        )}>
+                          {item.type === 'pro' ? (
+                            <Check className="w-3 h-3 text-success" />
+                          ) : (
+                            <X className="w-3 h-3 text-destructive" />
+                          )}
+                        </span>
+                        <span className="text-sm">{item.text}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -681,19 +667,13 @@ const Product = () => {
                       <div className="flex justify-between py-2 border-b border-border/50">
                         <span className="text-muted-foreground">Material</span>
                         <span className="font-medium">
-                          {product.title.toLowerCase().includes('leather') ? 'Genuine Leather' :
-                           product.title.toLowerCase().includes('silicone') ? 'Premium Silicone' :
-                           product.title.toLowerCase().includes('metal') ? 'Stainless Steel' :
-                           product.title.toLowerCase().includes('nylon') ? 'Woven Nylon' :
-                           'Premium Quality'}
+                          {getMaterialDisplayName(product.title, product.descriptionHtml || product.description)}
                         </span>
                       </div>
                       <div className="flex justify-between py-2 border-b border-border/50">
                         <span className="text-muted-foreground">Compatibility</span>
                         <span className="font-medium">
-                          {product.title.toLowerCase().includes('apple') ? 'Apple Watch' :
-                           product.title.toLowerCase().includes('samsung') ? 'Samsung Galaxy' :
-                           'Universal'}
+                          {getBrandDisplayName(product.title, product.descriptionHtml || product.description)}
                         </span>
                       </div>
                       <div className="flex justify-between py-2 border-b border-border/50">
