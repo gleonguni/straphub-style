@@ -23,7 +23,7 @@ const PageTransition = ({ children }: { children: ReactNode }) => {
     const timeout = setTimeout(() => {
       window.scrollTo({ top: 0, behavior: "instant" });
       setIsTransitioning(false);
-    }, 50);
+    }, 100);
     return () => clearTimeout(timeout);
   }, [location.pathname]);
 
