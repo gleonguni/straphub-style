@@ -165,20 +165,22 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
           />
         </div>
 
-        <div className="absolute top-3 left-3 flex flex-col gap-1">
-          {discount > 0 && (
-            <span className="badge-sale">Save {discount}%</span>
-          )}
-        </div>
-
-        {hasFreeShipping && (
-          <div className="absolute top-3 right-3">
-            <span className="badge-free-shipping flex items-center gap-1">
-              <Truck className="w-3 h-3" />
-              Free Shipping
-            </span>
+        {/* Badges - stacked in top-left on mobile, split on desktop */}
+        <div className="absolute top-2 left-2 right-2 flex flex-col md:flex-row md:justify-between gap-1">
+          <div className="flex flex-col gap-1">
+            {discount > 0 && (
+              <span className="badge-sale w-fit">{discount}% off</span>
+            )}
           </div>
-        )}
+          <div className="flex flex-col items-start md:items-end gap-1">
+            {hasFreeShipping && (
+              <span className="badge-free-shipping flex items-center gap-0.5 w-fit">
+                <Truck className="w-2.5 h-2.5" />
+                <span className="hidden sm:inline">Free</span> Shipping
+              </span>
+            )}
+          </div>
+        </div>
         
         {uniqueColors.length > 1 && (
           <div className="absolute bottom-3 left-3 hidden md:flex items-center gap-1">

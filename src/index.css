@@ -234,13 +234,13 @@
     @apply translate-y-0;
   }
 
-  /* Badge Styles */
+  /* Badge Styles - Subtle and professional */
   .badge-sale {
-    @apply bg-success text-success-foreground px-2 py-0.5 text-xs font-semibold rounded;
+    @apply bg-success/70 text-success-foreground px-1.5 py-0.5 text-[10px] font-medium rounded;
   }
 
   .badge-free-shipping {
-    @apply bg-sale text-sale-foreground px-2 py-0.5 text-xs font-semibold rounded;
+    @apply bg-sale/70 text-sale-foreground px-1.5 py-0.5 text-[10px] font-medium rounded;
   }
   
   /* In Stock / Out of Stock badges */
