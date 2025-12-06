@@ -155,13 +155,15 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
 
   return (
     <div className="product-card group bg-card rounded-lg overflow-hidden shadow-product">
-      <Link to={`/products/${node.handle}`} className="relative block aspect-square bg-muted overflow-hidden">
-        <img 
-          src={image} 
-          alt={imageAlt}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+      <Link to={`/products/${node.handle}`} className="relative block aspect-square bg-muted overflow-hidden p-3 md:p-4">
+        <div className="w-full h-full bg-background rounded-lg overflow-hidden">
+          <img 
+            src={image} 
+            alt={imageAlt}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        </div>
 
         <div className="absolute top-3 left-3 flex flex-col gap-1">
           {discount > 0 && (
