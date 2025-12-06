@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Search, ShoppingBag, Menu, X, ChevronDown, ChevronRight, Watch } from "lucide-react";
+import { Search, ShoppingBag, Menu, X, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -131,16 +131,15 @@ export function Header({ cartCount = 0, onCartClick }: HeaderProps) {
                       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                         Shop by Brand
                       </h3>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-3 gap-1">
                         {watchBrands.map((brand) => (
                           <Link
                             key={brand.name}
                             to={brand.href}
-                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors"
+                            className="px-3 py-2 rounded-lg text-sm font-medium hover:bg-muted hover:text-primary transition-colors"
                             onClick={() => setIsMegaMenuOpen(false)}
                           >
-                            <Watch className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">{brand.name}</span>
+                            {brand.name}
                           </Link>
                         ))}
                       </div>
@@ -308,10 +307,9 @@ export function Header({ cartCount = 0, onCartClick }: HeaderProps) {
                   <Link
                     key={brand.name}
                     to={brand.href}
-                    className="flex items-center gap-2 py-2 text-sm"
+                    className="block py-2 text-sm hover:text-primary transition-colors"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <Watch className="w-4 h-4 text-muted-foreground" />
                     {brand.name}
                   </Link>
                 ))}

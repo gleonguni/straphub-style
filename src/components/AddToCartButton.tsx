@@ -10,6 +10,7 @@ interface AddToCartButtonProps {
   className?: string;
   size?: "default" | "sm" | "lg" | "icon";
   variant?: "default" | "icon";
+  label?: string;
 }
 
 export const AddToCartButton = ({
@@ -19,6 +20,7 @@ export const AddToCartButton = ({
   className,
   size = "lg",
   variant = "default",
+  label = "Add to Cart",
 }: AddToCartButtonProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
@@ -90,7 +92,7 @@ export const AddToCartButton = ({
           isAdded && "opacity-0 scale-95"
         )}
       >
-        {isInStock ? "Add to Cart" : "Out of Stock"}
+        {isInStock ? label : "Out of Stock"}
       </span>
       
       {/* Success state */}
