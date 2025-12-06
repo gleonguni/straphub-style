@@ -1,10 +1,31 @@
-import { motion } from "framer-motion";
+import { motion, Transition, Variants } from "framer-motion";
 import { useEffect, ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 
 interface PageTransitionProps {
   children: ReactNode;
 }
+
+const pageVariants: Variants = {
+  initial: {
+    opacity: 0,
+    y: 12,
+  },
+  animate: {
+    opacity: 1,
+    y: 0,
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+  },
+};
+
+const pageTransition: Transition = {
+  type: "tween",
+  ease: "easeOut",
+  duration: 0.2,
+};
 
 const PageTransition = ({ children }: PageTransitionProps) => {
   const { pathname } = useLocation();
@@ -16,13 +37,12 @@ const PageTransition = ({ children }: PageTransitionProps) => {
   return (
     <motion.div
       key={pathname}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{
-        duration: 0.25,
-        ease: [0.25, 0.1, 0.25, 1],
-      }}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={pageVariants}
+      transition={pageTransition}
+      style={{ willChange: "opacity, transform" }}
     >
       {children}
     </motion.div>
