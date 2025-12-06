@@ -1,6 +1,17 @@
 // Utility functions to dynamically extract product information from Shopify data
 // This enables future-proofed, smart product details based on title, description, and tags
 
+/**
+ * Normalize text for parsing - convert hyphens/underscores to spaces
+ */
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export interface ProductAnalysis {
   materials: string[];
   brands: string[];
@@ -63,12 +74,7 @@ const IWATCH_SERIES_PATTERN = /iwatch\s*(?:series\s*)?(\d+)/gi;
  * Analyze a product's title and description to extract meaningful attributes
  */
 export function analyzeProduct(title: string, description?: string): ProductAnalysis {
-  // Normalize text: convert hyphens/underscores to spaces, lowercase
-  const rawText = `${title} ${description || ''}`;
-  const text = rawText
-    .toLowerCase()
-    .replace(/[-_]/g, ' ')  // Replace hyphens and underscores with spaces
-    .replace(/\s+/g, ' ');  // Normalize multiple spaces
+  const text = normalizeText(`${title} ${description || ''}`);
   
   const materials = Object.entries(MATERIAL_PATTERNS)
     .filter(([_, pattern]) => pattern.test(text))
@@ -155,7 +161,7 @@ export function analyzeProduct(title: string, description?: string): ProductAnal
  */
 export function getCompatibilityText(title: string, description?: string): string {
   const analysis = analyzeProduct(title, description);
-  const text = `${title} ${description || ''}`.toLowerCase();
+  const text = normalizeText(`${title} ${description || ''}`);
   
   // Check for SE mention
   const hasSE = /\bse\b/i.test(text);
@@ -174,27 +180,33 @@ export function getCompatibilityText(title: string, description?: string): strin
     if (series.length > 0) {
       const seriesNums = series.map(s => parseInt(s)).filter(n => n >= 1 && n <= 11);
       if (seriesNums.length > 0) {
-        // Check if it's a range or individual numbers
-        const min = Math.min(...seriesNums);
-        const max = Math.max(...seriesNums);
-        if (seriesNums.length >= 3 && max - min === seriesNums.length - 1) {
+        // Check if consecutive range (e.g., 1-9)
+        const sorted = [...seriesNums].sort((a, b) => a - b);
+        const min = sorted[0];
+        const max = sorted[sorted.length - 1];
+        const isConsecutive = sorted.length === (max - min + 1);
+        
+        if (isConsecutive && sorted.length >= 3) {
           seriesText = `Series ${min}-${max}`;
         } else {
-          seriesText = `Series ${seriesNums.join('/')}`;
+          seriesText = `Series ${sorted.join('/')}`;
         }
       }
-    } else {
-      seriesText = 'Series 1-11';
     }
     
     // Add SE if mentioned
     if (hasSE) {
-      seriesText += ', SE';
+      seriesText = seriesText ? `${seriesText}, SE` : 'SE';
     }
     
     // Add Ultra if mentioned
     if (hasUltra) {
-      seriesText += ', Ultra';
+      seriesText = seriesText ? `${seriesText}, Ultra` : 'Ultra';
+    }
+    
+    // Fallback if no series detected
+    if (!seriesText) {
+      seriesText = 'All Series';
     }
     
     // Build size text
