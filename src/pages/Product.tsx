@@ -208,7 +208,9 @@ const Product = () => {
 
   // Parse description to preserve formatting with proper HTML parsing
   const formatDescription = (description: string) => {
-    if (!description) return null;
+    if (!description || description === "No description available.") {
+      return <p className="text-muted-foreground">No description available.</p>;
+    }
     
     // Check if description contains HTML tags
     const hasHtml = /<[^>]+>/.test(description);
@@ -217,46 +219,63 @@ const Product = () => {
       // Return formatted HTML with proper styling - matching policy pages
       return (
         <div 
-          className="prose prose-lg max-w-none space-y-4
-            [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-foreground [&_h1]:mt-6 [&_h1]:mb-4
-            [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-6 [&_h2]:mb-4
-            [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-5 [&_h3]:mb-3
-            [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:text-foreground [&_h4]:mt-4 [&_h4]:mb-2
+          className="prose prose-lg max-w-none
+            [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:text-foreground [&_h1]:mb-4 [&_h1]:mt-0
+            [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mb-3 [&_h2]:mt-6
+            [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mb-2 [&_h3]:mt-5
+            [&_h4]:text-base [&_h4]:font-medium [&_h4]:text-foreground [&_h4]:mb-2 [&_h4]:mt-4
             [&_p]:text-muted-foreground [&_p]:leading-relaxed [&_p]:mb-4
-            [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2
-            [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
+            [&_p:last-child]:mb-0
+            [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-4 [&_ul]:space-y-1
+            [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-4 [&_ol]:space-y-1
             [&_li]:text-muted-foreground [&_li]:leading-relaxed
             [&_strong]:text-foreground [&_strong]:font-semibold
             [&_b]:text-foreground [&_b]:font-semibold
             [&_em]:italic
             [&_a]:text-primary [&_a]:hover:underline
-            [&_br]:block [&_br]:h-3
-            [&>*:first-child]:mt-0
-            [&>*:last-child]:mb-0"
+            [&_br]:block [&_br]:content-[''] [&_br]:mb-2
+            [&>*:first-child]:mt-0"
           dangerouslySetInnerHTML={{ __html: description }}
         />
       );
     }
     
-    // Plain text fallback - split by line breaks and process
-    const lines = description.split(/\n+/).filter(line => line.trim());
+    // Plain text fallback - split by double newlines for paragraphs, single newlines for line breaks
+    const paragraphs = description.split(/\n\s*\n/).filter(p => p.trim());
+    
+    if (paragraphs.length === 0) {
+      return <p className="text-muted-foreground leading-relaxed">{description}</p>;
+    }
     
     return (
       <div className="space-y-4">
-        {lines.map((line, index) => {
-          const trimmed = line.trim();
+        {paragraphs.map((paragraph, pIndex) => {
+          const lines = paragraph.split('\n').filter(line => line.trim());
           
-          // Check if it looks like a heading (short, ends with colon, or all caps)
-          if (trimmed.length < 50 && (trimmed.endsWith(':') || trimmed === trimmed.toUpperCase())) {
-            return <h4 key={index} className="font-semibold text-foreground mt-4 mb-2 text-lg">{trimmed}</h4>;
-          }
-          
-          // Check if it's a bullet point
-          if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
-            return <li key={index} className="ml-6 text-muted-foreground list-disc leading-relaxed">{trimmed.substring(1).trim()}</li>;
-          }
-          
-          return <p key={index} className="text-muted-foreground leading-relaxed">{trimmed}</p>;
+          return (
+            <div key={pIndex} className="space-y-2">
+              {lines.map((line, lIndex) => {
+                const trimmed = line.trim();
+                
+                // Check if it looks like a heading (short, ends with colon, or all caps)
+                if (trimmed.length < 60 && (trimmed.endsWith(':') || /^[A-Z\s]+$/.test(trimmed))) {
+                  return <h4 key={lIndex} className="font-semibold text-foreground text-base">{trimmed}</h4>;
+                }
+                
+                // Check if it's a bullet point
+                if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('–')) {
+                  return (
+                    <p key={lIndex} className="text-muted-foreground leading-relaxed pl-4 flex items-start gap-2">
+                      <span className="text-muted-foreground">•</span>
+                      <span>{trimmed.replace(/^[•\-*–]\s*/, '')}</span>
+                    </p>
+                  );
+                }
+                
+                return <p key={lIndex} className="text-muted-foreground leading-relaxed">{trimmed}</p>;
+              })}
+            </div>
+          );
         })}
       </div>
     );
@@ -606,7 +625,7 @@ const Product = () => {
                       "overflow-hidden transition-all duration-300",
                       expandedSection === "description" ? "max-h-[2000px] pb-6" : "max-h-0"
                     )}>
-                      {formatDescription(product.description || "No description available.")}
+                      {formatDescription(product.descriptionHtml || product.description || "No description available.")}
                     </div>
                   </div>
                 </div>
