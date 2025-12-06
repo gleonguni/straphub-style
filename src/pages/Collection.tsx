@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { useCartStore } from "@/stores/cartStore";
 import { ShopifyProduct } from "@/lib/shopify";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
 
 // Filter mappings for brand/material-based collections
 const brandFilters: Record<string, string[]> = {
@@ -190,6 +191,7 @@ function sortProducts(products: ShopifyProduct[], sortBy: string): ShopifyProduc
 }
 
 const Collection = () => {
+  useScrollToTop();
   const { slug = "all" } = useParams();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);

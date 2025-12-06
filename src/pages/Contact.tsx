@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Mail, MapPin, Phone, Clock, Send } from "lucide-react";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
@@ -8,8 +9,10 @@ import { CartDrawer } from "@/components/layout/CartDrawer";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useCartStore } from "@/stores/cartStore";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
 
 const Contact = () => {
+  useScrollToTop();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -199,24 +202,24 @@ const Contact = () => {
                   <h3 className="font-semibold mb-4">Frequently Asked Questions</h3>
                   <ul className="space-y-3 text-sm">
                     <li>
-                      <a href="/faq" className="text-primary hover:underline">
+                      <span className="text-muted-foreground">
                         How long does shipping take?
-                      </a>
+                      </span>
                     </li>
                     <li>
-                      <a href="/faq" className="text-primary hover:underline">
+                      <span className="text-muted-foreground">
                         What is your return policy?
-                      </a>
+                      </span>
                     </li>
                     <li>
-                      <a href="/faq" className="text-primary hover:underline">
+                      <span className="text-muted-foreground">
                         How do I know if a strap fits my watch?
-                      </a>
+                      </span>
                     </li>
                     <li>
-                      <a href="/faq" className="text-primary hover:underline">
+                      <span className="text-muted-foreground">
                         Do you ship internationally?
-                      </a>
+                      </span>
                     </li>
                   </ul>
                 </div>

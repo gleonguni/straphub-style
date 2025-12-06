@@ -10,8 +10,10 @@ import { FeaturedCollections } from "@/components/home/FeaturedCollections";
 import { BrandShowcase } from "@/components/home/BrandShowcase";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { useCartStore } from "@/stores/cartStore";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
 
 const Index = () => {
+  useScrollToTop();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const totalItems = useCartStore((state) => state.getTotalItems());
 
