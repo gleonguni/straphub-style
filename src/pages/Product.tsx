@@ -604,11 +604,9 @@ const Product = () => {
                     </button>
                     <div className={cn(
                       "overflow-hidden transition-all duration-300",
-                      expandedSection === "description" ? "max-h-[800px] pb-4" : "max-h-0"
+                      expandedSection === "description" ? "max-h-[2000px] pb-6" : "max-h-0"
                     )}>
-                      <div className="text-sm">
-                        {formatDescription(product.description || "No description available.")}
-                      </div>
+                      {formatDescription(product.description || "No description available.")}
                     </div>
                   </div>
                 </div>
