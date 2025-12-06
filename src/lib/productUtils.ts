@@ -63,7 +63,12 @@ const IWATCH_SERIES_PATTERN = /iwatch\s*(?:series\s*)?(\d+)/gi;
  * Analyze a product's title and description to extract meaningful attributes
  */
 export function analyzeProduct(title: string, description?: string): ProductAnalysis {
-  const text = `${title} ${description || ''}`.toLowerCase();
+  // Normalize text: convert hyphens/underscores to spaces, lowercase
+  const rawText = `${title} ${description || ''}`;
+  const text = rawText
+    .toLowerCase()
+    .replace(/[-_]/g, ' ')  // Replace hyphens and underscores with spaces
+    .replace(/\s+/g, ' ');  // Normalize multiple spaces
   
   const materials = Object.entries(MATERIAL_PATTERNS)
     .filter(([_, pattern]) => pattern.test(text))
@@ -77,50 +82,59 @@ export function analyzeProduct(title: string, description?: string): ProductAnal
     .filter(([_, pattern]) => pattern.test(text))
     .map(([feature]) => feature);
   
-  // Extract sizes - look for patterns like "41mm", "40 44mm", "45 42"
+  // Extract watch sizes - look for 2-digit numbers that are valid watch sizes
   const watchSizes: string[] = [];
-  const sizeMatches = text.match(/\b(\d{2})\s*(?:mm)?\b/g) || [];
-  sizeMatches.forEach(match => {
-    const num = match.replace(/\D/g, '');
-    // Valid watch sizes are typically 38-49mm
+  // Match patterns like "40mm", "41 mm", "40 41 44 45mm", "40/41/44/45mm"
+  const sizePattern = /\b(3[89]|4[0-79])\s*(?:mm)?\b/g;
+  let sizeMatch;
+  while ((sizeMatch = sizePattern.exec(text)) !== null) {
+    const num = sizeMatch[1];
+    // Valid Apple Watch sizes
     if (['38', '40', '41', '42', '44', '45', '46', '47', '49'].includes(num)) {
-      watchSizes.push(`${num}mm`);
-    }
-  });
-  
-  // Extract series numbers
-  const seriesNumbers: string[] = [];
-  const seriesMatch = text.match(/series\s*(\d+(?:\s*[,\/&\s]+\d+)*)/gi);
-  if (seriesMatch) {
-    seriesMatch.forEach(m => {
-      const nums = m.match(/\d+/g);
-      if (nums) seriesNumbers.push(...nums);
-    });
-  }
-  
-  // Also check for iwatch series pattern
-  const iwatchMatch = text.match(/iwatch\s*(?:series\s*)?(\d+(?:\s*[,\/&\s]+\d+)*)/gi);
-  if (iwatchMatch) {
-    iwatchMatch.forEach(m => {
-      const nums = m.match(/\d+/g);
-      if (nums) seriesNumbers.push(...nums);
-    });
-  }
-  
-  // Check for standalone series numbers like "9 8 6 5"
-  const standaloneSeriesMatch = text.match(/(?:series|iwatch)\s*[\d\s,\/&]+/gi);
-  if (standaloneSeriesMatch) {
-    standaloneSeriesMatch.forEach(m => {
-      const nums = m.match(/\d+/g);
-      if (nums) {
-        nums.forEach(n => {
-          if (parseInt(n) <= 11 && parseInt(n) >= 1) {
-            seriesNumbers.push(n);
-          }
-        });
+      if (!watchSizes.includes(`${num}mm`)) {
+        watchSizes.push(`${num}mm`);
       }
-    });
+    }
   }
+  
+  // Extract series numbers - look for "series" followed by numbers
+  const seriesNumbers: string[] = [];
+  
+  // Pattern 1: "series 9 8 7 6 5" or "series 9, 8, 7" etc
+  const seriesBlockMatch = text.match(/series\s+([\d\s,\/&]+)/i);
+  if (seriesBlockMatch) {
+    const numbersStr = seriesBlockMatch[1];
+    const nums = numbersStr.match(/\d+/g);
+    if (nums) {
+      nums.forEach(n => {
+        const num = parseInt(n);
+        if (num >= 1 && num <= 11 && !seriesNumbers.includes(n)) {
+          seriesNumbers.push(n);
+        }
+      });
+    }
+  }
+  
+  // Pattern 2: "iwatch series X" or "iwatch X"
+  const iwatchMatch = text.match(/iwatch\s+(?:series\s+)?([\d\s,\/&]+)/i);
+  if (iwatchMatch) {
+    const numbersStr = iwatchMatch[1];
+    const nums = numbersStr.match(/\d+/g);
+    if (nums) {
+      nums.forEach(n => {
+        const num = parseInt(n);
+        if (num >= 1 && num <= 11 && !seriesNumbers.includes(n)) {
+          seriesNumbers.push(n);
+        }
+      });
+    }
+  }
+  
+  // Sort series numbers
+  const sortedSeries = [...new Set(seriesNumbers)].sort((a, b) => parseInt(a) - parseInt(b));
+  
+  // Sort sizes by number
+  const sortedSizes = [...new Set(watchSizes)].sort((a, b) => parseInt(a) - parseInt(b));
   
   return {
     materials,
@@ -131,8 +145,8 @@ export function analyzeProduct(title: string, description?: string): ProductAnal
     isLuxury: features.includes('luxury'),
     isCasual: features.includes('casual'),
     hasQuickRelease: features.includes('quickRelease'),
-    watchSizes: [...new Set(watchSizes)],
-    seriesNumbers: [...new Set(seriesNumbers)].sort((a, b) => parseInt(a) - parseInt(b)),
+    watchSizes: sortedSizes,
+    seriesNumbers: sortedSeries,
   };
 }
 
