@@ -13,36 +13,27 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Page transition wrapper with smooth crossfade
+// Smooth page transition wrapper
 const PageTransition = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
-  const [displayChildren, setDisplayChildren] = useState(children);
-  const [transitionStage, setTransitionStage] = useState<"fadeIn" | "fadeOut">("fadeIn");
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
-    if (children !== displayChildren) {
-      setTransitionStage("fadeOut");
-    }
-  }, [children, displayChildren]);
-
-  const handleTransitionEnd = () => {
-    if (transitionStage === "fadeOut") {
-      setDisplayChildren(children);
+    setIsTransitioning(true);
+    const timeout = setTimeout(() => {
       window.scrollTo({ top: 0, behavior: "instant" });
-      setTransitionStage("fadeIn");
-    }
-  };
+      setIsTransitioning(false);
+    }, 50);
+    return () => clearTimeout(timeout);
+  }, [location.pathname]);
 
   return (
     <div
-      className={`transition-all duration-300 ease-in-out ${
-        transitionStage === "fadeIn" 
-          ? "opacity-100 translate-y-0" 
-          : "opacity-0 translate-y-1"
+      className={`transition-opacity duration-150 ease-out ${
+        isTransitioning ? "opacity-0" : "opacity-100"
       }`}
-      onTransitionEnd={handleTransitionEnd}
     >
-      {displayChildren}
+      {children}
     </div>
   );
 };
