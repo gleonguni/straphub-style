@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Truck, RefreshCw, Shield, ChevronDown, ChevronLeft, ChevronRight, Loader2, Check, X, Clock, Leaf } from "lucide-react";
@@ -181,7 +181,7 @@ const Product = () => {
   const hasFreeShipping = parseFloat(price) >= 25;
   const isInStock = selectedVariant?.availableForSale ?? true;
 
-  const handleAddToCart = useCallback(() => {
+  const handleAddToCart = () => {
     if (!selectedVariant) return;
 
     const cartItem: CartItem = {
@@ -194,7 +194,7 @@ const Product = () => {
     };
 
     addItem(cartItem);
-  }, [selectedVariant, product, addItem]);
+  };
 
   // Get variant image for color swatches
   const getVariantImage = (optionValue: string, optionName: string) => {
@@ -273,7 +273,7 @@ const Product = () => {
   const mainProductImage = filteredImages[0]?.node.url || '/placeholder.svg';
 
   // Handle quick add for related products
-  const handleQuickAdd = useCallback((relatedProduct: typeof relatedProducts[0]) => {
+  const handleQuickAdd = (relatedProduct: typeof relatedProducts[0]) => {
     const firstVariant = relatedProduct.node.variants.edges[0]?.node;
     if (!firstVariant) return;
 
@@ -287,7 +287,7 @@ const Product = () => {
     };
 
     addItem(cartItem);
-  }, [addItem]);
+  };
 
   return (
     <>
