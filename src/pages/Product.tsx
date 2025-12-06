@@ -321,12 +321,12 @@ const Product = () => {
               <div className="space-y-4 bg-gallery rounded-2xl p-4 lg:p-6">
                 {/* Mobile Carousel */}
                 <div className="md:hidden relative">
-                  <div className="aspect-square bg-muted rounded-xl overflow-hidden p-3">
-                    <div className="w-full h-full bg-background rounded-lg overflow-hidden">
+                  <div className="aspect-square bg-white rounded-xl overflow-hidden">
+                    <div className="w-full h-full p-3">
                       <img 
                         src={filteredImages[mobileImageIndex]?.node.url || '/placeholder.svg'}
                         alt={filteredImages[mobileImageIndex]?.node.altText || product.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </div>
                   </div>
@@ -362,12 +362,12 @@ const Product = () => {
 
                 {/* Desktop Gallery */}
                 <div className="hidden md:block">
-                  <div className="aspect-square bg-muted rounded-xl overflow-hidden border border-border p-4">
-                    <div className="w-full h-full bg-background rounded-lg overflow-hidden">
+                  <div className="aspect-square bg-white rounded-xl overflow-hidden border border-border">
+                    <div className="w-full h-full p-4">
                       <img 
                         src={filteredImages[selectedImage]?.node.url || '/placeholder.svg'}
                         alt={filteredImages[selectedImage]?.node.altText || product.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </div>
                   </div>
@@ -378,15 +378,13 @@ const Product = () => {
                           key={index}
                           onClick={() => setSelectedImage(index)}
                           className={cn(
-                            "aspect-square rounded-lg overflow-hidden border-2 transition-all bg-muted p-1.5",
+                            "aspect-square rounded-lg overflow-hidden border-2 transition-all bg-white p-1",
                             selectedImage === index 
                               ? "border-primary ring-2 ring-primary/20" 
                               : "border-border hover:border-primary/50"
                           )}
                         >
-                          <div className="w-full h-full bg-background rounded overflow-hidden">
-                            <img src={image.node.url} alt="" className="w-full h-full object-cover" />
-                          </div>
+                          <img src={image.node.url} alt="" className="w-full h-full object-contain" />
                         </button>
                       ))}
                     </div>
