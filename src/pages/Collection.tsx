@@ -257,7 +257,7 @@ const Collection = () => {
             <div className="flex gap-6 md:gap-8">
               {/* Desktop Filters */}
               <aside className="hidden lg:block w-64 flex-shrink-0">
-                <div className="sticky top-24">
+                <div className="sticky top-24 bg-filter rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="font-semibold">Filters</h2>
                     {hasActiveFilters && (
