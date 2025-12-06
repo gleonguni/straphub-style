@@ -207,7 +207,43 @@ export function getCompatibilityText(title: string, description?: string): strin
   
   // Samsung specific
   if (analysis.brands.includes('samsung')) {
-    return 'Samsung Galaxy Watch 4/5/6/7, Classic & Ultra';
+    const sizes = analysis.watchSizes;
+    let sizeText = sizes.length > 0 ? ` (${sizes.join('/')})` : '';
+    
+    // Extract Galaxy Watch series numbers from title
+    const galaxyMatch = text.match(/galaxy\s*watch\s*([\d\s\/,]+)/i);
+    let seriesText = '';
+    
+    if (galaxyMatch) {
+      const nums = galaxyMatch[1].match(/\d+/g);
+      if (nums) {
+        const validNums = nums.map(n => parseInt(n)).filter(n => n >= 1 && n <= 10);
+        if (validNums.length > 0) {
+          seriesText = validNums.join('/');
+        }
+      }
+    }
+    
+    // Check for Classic variant
+    const hasClassic = /classic/i.test(text);
+    // Check for Ultra variant  
+    const hasUltra = /ultra/i.test(text);
+    
+    let result = 'Samsung Galaxy Watch';
+    if (seriesText) {
+      result += ` ${seriesText}`;
+    }
+    if (hasClassic) {
+      result += ' Classic';
+    }
+    if (hasUltra) {
+      result += ' Ultra';
+    }
+    if (sizeText) {
+      result += sizeText;
+    }
+    
+    return result || 'Samsung Galaxy Watch';
   }
   
   // Garmin specific

@@ -533,7 +533,7 @@ const Product = () => {
                   />
                 </div>
 
-                {/* Compatible With Badge - Dynamic */}
+                {/* Compatible With Badge - Dynamic from title only */}
                 <div className="flex items-center gap-3 p-3 bg-muted rounded-lg mb-4">
                   <div className="w-12 h-12 rounded-lg overflow-hidden border border-border flex-shrink-0">
                     <img src={mainProductImage} alt="" className="w-full h-full object-cover" />
@@ -541,7 +541,7 @@ const Product = () => {
                   <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">This product is compatible with</p>
                     <p className="text-sm font-medium text-success truncate">
-                      {getCompatibilityText(product.title, product.descriptionHtml || product.description)}
+                      {getCompatibilityText(product.title)}
                     </p>
                   </div>
                 </div>
@@ -625,11 +625,11 @@ const Product = () => {
                   </div>
                 </div>
 
-                {/* Pros and Cons - Always Open, Dynamic */}
+                {/* Pros and Cons - Always Open, Dynamic from title only */}
                 <div className="border-b border-border py-4">
                   <h3 className="font-medium mb-4">Pros & Cons</h3>
                   <div className="space-y-3">
-                    {getProductProsAndCons(product.title, product.descriptionHtml || product.description).map((item, index) => (
+                    {getProductProsAndCons(product.title).map((item, index) => (
                       <div key={index} className="flex items-start gap-2">
                         <span className={cn(
                           "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
@@ -667,13 +667,13 @@ const Product = () => {
                       <div className="flex justify-between py-2 border-b border-border/50">
                         <span className="text-muted-foreground">Material</span>
                         <span className="font-medium">
-                          {getMaterialDisplayName(product.title, product.descriptionHtml || product.description)}
+                          {getMaterialDisplayName(product.title)}
                         </span>
                       </div>
                       <div className="flex justify-between py-2 border-b border-border/50">
                         <span className="text-muted-foreground">Compatibility</span>
                         <span className="font-medium">
-                          {getBrandDisplayName(product.title, product.descriptionHtml || product.description)}
+                          {getBrandDisplayName(product.title)}
                         </span>
                       </div>
                       <div className="flex justify-between py-2 border-b border-border/50">
