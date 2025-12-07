@@ -23,6 +23,8 @@ export interface ProductAnalysis {
   hasQuickRelease: boolean;
   watchSizes: string[];
   seriesNumbers: string[];
+  isAccessory: boolean;
+  accessoryType: string | null;
 }
 
 // Detect materials from product text
@@ -35,6 +37,7 @@ const MATERIAL_PATTERNS = {
   resin: /resin|plastic|polymer/i,
   ceramic: /ceramic/i,
   wood: /wood|wooden|bamboo/i,
+  glass: /tempered glass|glass|screen protector/i,
 };
 
 // Detect watch brands from product text
@@ -65,10 +68,51 @@ const FEATURE_PATTERNS = {
   adjustable: /adjustable|one\s*size|universal\s*fit/i,
 };
 
+// Accessory type patterns
+const ACCESSORY_PATTERNS = {
+  screenProtector: /screen\s*protector|tempered\s*glass|protective\s*film|glass\s*protector/i,
+  case: /case|cover|bumper|armor|protective\s*case/i,
+  charger: /charger|charging\s*dock|charging\s*cable|charging\s*stand/i,
+  stand: /stand|dock|holder|cradle/i,
+  cleaningKit: /cleaning|cleaner|tool\s*kit/i,
+};
+
 // Extract watch sizes (e.g., 38mm, 40mm, 42mm, 44mm, etc.) - handles various formats
 const SIZE_PATTERN = /(\d{2})\s*(?:mm)?/gi;
 const SERIES_PATTERN = /series\s*(\d+)/gi;
 const IWATCH_SERIES_PATTERN = /iwatch\s*(?:series\s*)?(\d+)/gi;
+
+/**
+ * Check if product is an accessory (not a strap/band)
+ */
+export function checkIsAccessory(title: string, description?: string): boolean {
+  const text = `${title} ${description || ''}`.toLowerCase();
+  const accessoryKeywords = [
+    'protector', 'screen protector', 'case', 'cover', 'charger', 'charging', 
+    'stand', 'dock', 'holder', 'cleaning', 'tool', 'adapter', 'cable',
+    'tempered glass', 'film', 'bumper', 'armor', 'shield'
+  ];
+  const strapKeywords = ['strap', 'band', 'bracelet', 'wristband', 'watchband', 'loop'];
+  
+  const hasAccessoryKeyword = accessoryKeywords.some(kw => text.includes(kw));
+  const hasStrapKeyword = strapKeywords.some(kw => text.includes(kw));
+  
+  return hasAccessoryKeyword && !hasStrapKeyword;
+}
+
+/**
+ * Detect accessory type from title
+ */
+export function getAccessoryType(title: string): string | null {
+  const text = title.toLowerCase();
+  
+  for (const [type, pattern] of Object.entries(ACCESSORY_PATTERNS)) {
+    if (pattern.test(text)) {
+      return type;
+    }
+  }
+  return null;
+}
 
 /**
  * Analyze a product's title and description to extract meaningful attributes
@@ -142,6 +186,10 @@ export function analyzeProduct(title: string, description?: string): ProductAnal
   // Sort sizes by number
   const sortedSizes = [...new Set(watchSizes)].sort((a, b) => parseInt(a) - parseInt(b));
   
+  // Check if it's an accessory
+  const isAccessory = checkIsAccessory(title, description);
+  const accessoryType = isAccessory ? getAccessoryType(title) : null;
+  
   return {
     materials,
     brands,
@@ -153,6 +201,8 @@ export function analyzeProduct(title: string, description?: string): ProductAnal
     hasQuickRelease: features.includes('quickRelease'),
     watchSizes: sortedSizes,
     seriesNumbers: sortedSeries,
+    isAccessory,
+    accessoryType,
   };
 }
 
@@ -173,10 +223,10 @@ export function getCompatibilityText(title: string, description?: string): strin
     const sizes = analysis.watchSizes;
     const series = analysis.seriesNumbers;
     
-    let seriesText = '';
+    let modelText = '';
     let sizeText = '';
     
-    // Build series text from extracted numbers
+    // Build series/model text from extracted numbers
     if (series.length > 0) {
       const seriesNums = series.map(s => parseInt(s)).filter(n => n >= 1 && n <= 11);
       if (seriesNums.length > 0) {
@@ -187,26 +237,21 @@ export function getCompatibilityText(title: string, description?: string): strin
         const isConsecutive = sorted.length === (max - min + 1);
         
         if (isConsecutive && sorted.length >= 3) {
-          seriesText = `Series ${min}-${max}`;
+          modelText = `Series ${min}-${max}`;
         } else {
-          seriesText = `Series ${sorted.join('/')}`;
+          modelText = `Series ${sorted.join('/')}`;
         }
       }
     }
     
     // Add SE if mentioned
     if (hasSE) {
-      seriesText = seriesText ? `${seriesText}, SE` : 'SE';
+      modelText = modelText ? `${modelText}, SE` : 'SE';
     }
     
     // Add Ultra if mentioned
     if (hasUltra) {
-      seriesText = seriesText ? `${seriesText}, Ultra` : 'Ultra';
-    }
-    
-    // Fallback if no series detected
-    if (!seriesText) {
-      seriesText = 'All Series';
+      modelText = modelText ? `${modelText}, Ultra` : 'Ultra';
     }
     
     // Build size text
@@ -214,7 +259,12 @@ export function getCompatibilityText(title: string, description?: string): strin
       sizeText = ` (${sizes.join('/')})`;
     }
     
-    return `Apple Watch ${seriesText}${sizeText}`;
+    // If no specific series/model detected, say "All Apple Watches"
+    if (!modelText) {
+      return `All Apple Watches${sizeText}`;
+    }
+    
+    return `Apple Watch ${modelText}${sizeText}`;
   }
   
   // Samsung specific
@@ -222,31 +272,35 @@ export function getCompatibilityText(title: string, description?: string): strin
     const sizes = analysis.watchSizes;
     let sizeText = sizes.length > 0 ? ` (${sizes.join('/')})` : '';
     
-    // Extract Galaxy Watch series numbers from title
+    // Extract Galaxy Watch series numbers from title with Classic support
     const galaxyMatch = text.match(/galaxy\s*watch\s*([\d\s\/,]+)/i);
-    let seriesText = '';
+    const models: string[] = [];
     
     if (galaxyMatch) {
       const nums = galaxyMatch[1].match(/\d+/g);
       if (nums) {
-        const validNums = nums.map(n => parseInt(n)).filter(n => n >= 1 && n <= 10);
-        if (validNums.length > 0) {
-          seriesText = validNums.join('/');
-        }
+        nums.forEach(n => {
+          const num = parseInt(n);
+          if (num >= 1 && num <= 10) {
+            // Check for Classic variant - look for patterns like "8 classic", "8c", "galaxy watch 8 classic"
+            const hasClassicForNum = new RegExp(`${n}\\s*c(?:lassic)?|${n}\\s+classic`, 'i').test(text);
+            
+            if (hasClassicForNum) {
+              models.push(`${n}c`); // Use shorthand for classic
+            } else {
+              models.push(n);
+            }
+          }
+        });
       }
     }
     
-    // Check for Classic variant
-    const hasClassic = /classic/i.test(text);
     // Check for Ultra variant  
     const hasUltra = /ultra/i.test(text);
     
     let result = 'Samsung Galaxy Watch';
-    if (seriesText) {
-      result += ` ${seriesText}`;
-    }
-    if (hasClassic) {
-      result += ' Classic';
+    if (models.length > 0) {
+      result += ` ${[...new Set(models)].join('/')}`;
     }
     if (hasUltra) {
       result += ' Ultra';
@@ -255,17 +309,22 @@ export function getCompatibilityText(title: string, description?: string): strin
       result += sizeText;
     }
     
-    return result || 'Samsung Galaxy Watch';
+    // If no specific model, say "All Samsung Galaxy Watches"
+    if (models.length === 0 && !hasUltra) {
+      return `All Samsung Galaxy Watches${sizeText}`;
+    }
+    
+    return result;
   }
   
   // Garmin specific
   if (analysis.brands.includes('garmin')) {
-    return 'Garmin Fenix, Forerunner, Venu & Vivoactive';
+    return 'All Garmin Watches';
   }
   
   // Fitbit specific
   if (analysis.brands.includes('fitbit')) {
-    return 'Fitbit Versa, Sense & Charge Series';
+    return 'All Fitbit Devices';
   }
   
   // Google Pixel specific
@@ -275,12 +334,12 @@ export function getCompatibilityText(title: string, description?: string): strin
   
   // Huawei specific
   if (analysis.brands.includes('huawei')) {
-    return 'Huawei Watch GT Series & Honor';
+    return 'All Huawei Watches';
   }
   
   // Amazfit specific
   if (analysis.brands.includes('amazfit')) {
-    return 'Amazfit GTS, GTR & Bip Series';
+    return 'All Amazfit Watches';
   }
   
   // Multiple brands detected
@@ -309,7 +368,43 @@ export function getProductProsAndCons(title: string, description?: string): ProC
   const analysis = analyzeProduct(title, description);
   const prosAndCons: ProCon[] = [];
   
-  // Material-based pros and cons
+  // Check if it's an accessory first
+  if (analysis.isAccessory) {
+    const accessoryType = analysis.accessoryType;
+    
+    if (accessoryType === 'screenProtector') {
+      prosAndCons.push({ type: 'pro', text: 'Keeps original touch responsiveness intact' });
+      prosAndCons.push({ type: 'pro', text: 'Protects against scratches and daily wear' });
+      prosAndCons.push({ type: 'pro', text: 'Crystal clear visibility with anti-fingerprint coating' });
+      prosAndCons.push({ type: 'con', text: 'Requires careful bubble-free installation' });
+      return prosAndCons;
+    }
+    
+    if (accessoryType === 'case') {
+      prosAndCons.push({ type: 'pro', text: 'Full protection against bumps and drops' });
+      prosAndCons.push({ type: 'pro', text: 'Slim fit that doesn\'t add bulk' });
+      prosAndCons.push({ type: 'pro', text: 'Easy snap-on installation' });
+      prosAndCons.push({ type: 'con', text: 'May need removal for some charging docks' });
+      return prosAndCons;
+    }
+    
+    if (accessoryType === 'charger' || accessoryType === 'stand') {
+      prosAndCons.push({ type: 'pro', text: 'Convenient bedside or desk charging' });
+      prosAndCons.push({ type: 'pro', text: 'Keeps your watch at a perfect viewing angle' });
+      prosAndCons.push({ type: 'pro', text: 'Stable non-slip base design' });
+      prosAndCons.push({ type: 'con', text: 'Requires nearby power outlet' });
+      return prosAndCons;
+    }
+    
+    // Generic accessory pros/cons
+    prosAndCons.push({ type: 'pro', text: 'Enhances your smartwatch experience' });
+    prosAndCons.push({ type: 'pro', text: 'High-quality materials for durability' });
+    prosAndCons.push({ type: 'pro', text: 'Perfect fit guaranteed' });
+    prosAndCons.push({ type: 'con', text: 'Accessory only — watch not included' });
+    return prosAndCons;
+  }
+  
+  // Material-based pros and cons for straps
   if (analysis.materials.includes('silicone')) {
     prosAndCons.push({ type: 'pro', text: 'Waterproof and sweat-resistant — ideal for sports and swimming' });
     prosAndCons.push({ type: 'pro', text: 'Lightweight and flexible for all-day comfort' });
@@ -338,15 +433,6 @@ export function getProductProsAndCons(title: string, description?: string): ProC
     prosAndCons.push({ type: 'con', text: 'May require brief break-in period for optimal comfort' });
   }
   
-  // Add feature-based pros
-  if (analysis.hasQuickRelease && prosAndCons.length < 4) {
-    prosAndCons.splice(2, 0, { type: 'pro', text: 'Quick-release pins for effortless strap changes' });
-  }
-  
-  if (analysis.isWaterproof && !analysis.materials.includes('silicone') && prosAndCons.length < 4) {
-    prosAndCons.splice(2, 0, { type: 'pro', text: 'Water-resistant design for worry-free wear' });
-  }
-  
   // Ensure we have exactly 3 pros and 1 con
   const pros = prosAndCons.filter(p => p.type === 'pro').slice(0, 3);
   const cons = prosAndCons.filter(p => p.type === 'con').slice(0, 1);
@@ -359,6 +445,16 @@ export function getProductProsAndCons(title: string, description?: string): ProC
  */
 export function getMaterialDisplayName(title: string, description?: string): string {
   const analysis = analyzeProduct(title, description);
+  
+  // For accessories, return specific material info
+  if (analysis.isAccessory) {
+    if (analysis.materials.includes('glass')) return 'Tempered Glass';
+    if (analysis.accessoryType === 'screenProtector') return 'Tempered Glass';
+    if (analysis.accessoryType === 'case') return 'Hard Polycarbonate';
+    if (analysis.accessoryType === 'charger') return 'ABS Plastic';
+    if (analysis.accessoryType === 'stand') return 'Aluminum Alloy';
+    return 'Premium Materials';
+  }
   
   if (analysis.materials.includes('leather')) return 'Genuine Leather';
   if (analysis.materials.includes('silicone')) return 'Premium Silicone';
@@ -386,4 +482,46 @@ export function getBrandDisplayName(title: string, description?: string): string
   if (analysis.brands.includes('amazfit')) return 'Amazfit';
   
   return 'Universal';
+}
+
+/**
+ * Get product specifications - smarter detection for accessories
+ */
+export function getProductSpecifications(title: string, description?: string): Array<{ label: string; value: string }> {
+  const analysis = analyzeProduct(title, description);
+  const specs: Array<{ label: string; value: string }> = [];
+  
+  // Always add material
+  specs.push({ label: 'Material', value: getMaterialDisplayName(title, description) });
+  
+  // Always add compatibility
+  specs.push({ label: 'Compatibility', value: getBrandDisplayName(title, description) });
+  
+  if (analysis.isAccessory) {
+    // Accessory-specific specs
+    if (analysis.accessoryType === 'screenProtector') {
+      specs.push({ label: 'Hardness', value: '9H Tempered Glass' });
+      specs.push({ label: 'Transparency', value: '99% HD Clear' });
+    } else if (analysis.accessoryType === 'case') {
+      specs.push({ label: 'Protection Level', value: 'Full Coverage' });
+      specs.push({ label: 'Charging Compatible', value: 'Yes' });
+    } else if (analysis.accessoryType === 'charger' || analysis.accessoryType === 'stand') {
+      specs.push({ label: 'Input', value: 'USB-C / USB-A' });
+      specs.push({ label: 'Fast Charge', value: 'Supported' });
+    }
+  } else {
+    // Strap specs
+    specs.push({ label: 'Closure Type', value: analysis.materials.includes('milanese') ? 'Magnetic Clasp' : 'Pin & Tuck' });
+    
+    // Water resistance based on material
+    let waterResistance = 'Yes';
+    if (analysis.materials.includes('leather')) {
+      waterResistance = 'Splash Resistant';
+    } else if (analysis.materials.includes('nylon')) {
+      waterResistance = 'Quick-Dry';
+    }
+    specs.push({ label: 'Water Resistant', value: waterResistance });
+  }
+  
+  return specs;
 }

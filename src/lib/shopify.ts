@@ -71,6 +71,7 @@ export interface CartItem {
   product: ShopifyProduct;
   variantId: string;
   variantTitle: string;
+  variantImage?: string; // Add variant-specific image
   price: {
     amount: string;
     currencyCode: string;
@@ -378,4 +379,85 @@ export function calculateDiscount(price: string, compareAtPrice?: string | null)
   const compareNum = parseFloat(compareAtPrice);
   if (compareNum <= priceNum) return 0;
   return Math.round(((compareNum - priceNum) / compareNum) * 100);
+}
+
+// Helper to check if a product is an accessory (not a strap)
+export function isAccessory(title: string, description?: string): boolean {
+  const text = `${title} ${description || ''}`.toLowerCase();
+  const accessoryKeywords = [
+    'protector', 'screen protector', 'case', 'cover', 'charger', 'charging', 
+    'stand', 'dock', 'holder', 'cleaning', 'tool', 'adapter', 'cable',
+    'tempered glass', 'film', 'bumper', 'armor', 'shield'
+  ];
+  const strapKeywords = ['strap', 'band', 'bracelet', 'wristband', 'watchband'];
+  
+  const hasAccessoryKeyword = accessoryKeywords.some(kw => text.includes(kw));
+  const hasStrapKeyword = strapKeywords.some(kw => text.includes(kw));
+  
+  // If it has accessory keywords but no strap keywords, it's an accessory
+  return hasAccessoryKeyword && !hasStrapKeyword;
+}
+
+// Helper to extract device compatibility from title
+export function getDeviceCompatibility(title: string): { brand: string; models: string[] } {
+  const text = title.toLowerCase();
+  
+  // Apple Watch
+  if (/apple|iwatch/.test(text)) {
+    const models: string[] = [];
+    
+    // Extract series numbers
+    const seriesMatch = text.match(/series\s*([\d\s,\/]+)/i);
+    if (seriesMatch) {
+      const nums = seriesMatch[1].match(/\d+/g);
+      if (nums) models.push(...nums.map(n => `Series ${n}`));
+    }
+    
+    if (/\bse\b/i.test(text)) models.push('SE');
+    if (/\bultra\b/i.test(text)) models.push('Ultra');
+    
+    return { brand: 'apple', models };
+  }
+  
+  // Samsung Galaxy Watch
+  if (/samsung|galaxy\s*watch/.test(text)) {
+    const models: string[] = [];
+    
+    // Extract Galaxy Watch numbers with Classic/Ultra variants
+    const galaxyMatch = text.match(/galaxy\s*watch\s*([\d\s\/,]+)/i);
+    if (galaxyMatch) {
+      const nums = galaxyMatch[1].match(/\d+/g);
+      if (nums) {
+        nums.forEach(n => {
+          models.push(n);
+          // Check for Classic variant for this specific number
+          const classicPattern = new RegExp(`galaxy\\s*watch\\s*${n}\\s*classic|${n}\\s*classic|${n}c`, 'i');
+          if (classicPattern.test(text)) {
+            models.push(`${n} Classic`);
+          }
+        });
+      }
+    }
+    
+    if (/\bultra\b/i.test(text)) models.push('Ultra');
+    
+    return { brand: 'samsung', models: [...new Set(models)] };
+  }
+  
+  // Garmin
+  if (/garmin/i.test(text)) {
+    return { brand: 'garmin', models: [] };
+  }
+  
+  // Fitbit
+  if (/fitbit/i.test(text)) {
+    return { brand: 'fitbit', models: [] };
+  }
+  
+  // Google Pixel
+  if (/pixel\s*watch|google/i.test(text)) {
+    return { brand: 'google', models: [] };
+  }
+  
+  return { brand: 'universal', models: [] };
 }

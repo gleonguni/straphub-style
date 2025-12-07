@@ -156,7 +156,7 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
   return (
     <div className="product-card group bg-card rounded-lg overflow-hidden shadow-product">
       <Link to={`/products/${node.handle}`} className="relative block aspect-square bg-white overflow-hidden">
-        <div className="w-full h-full p-2 md:p-3">
+        <div className="w-full h-full p-4 md:p-5">
           <img 
             src={image} 
             alt={imageAlt}
@@ -165,8 +165,8 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
           />
         </div>
 
-        {/* Badges - stacked in top-left on mobile, split on desktop */}
-        <div className="absolute top-2 left-2 right-2 flex flex-col md:flex-row md:justify-between gap-1">
+        {/* Badges - stacked vertically on mobile for clarity */}
+        <div className="absolute top-2 left-2 right-2 flex flex-col md:flex-row md:justify-between gap-1.5">
           <div className="flex flex-col gap-1">
             {discount > 0 && (
               <span className="badge-sale w-fit">{discount}% off</span>
@@ -174,9 +174,9 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
           </div>
           <div className="flex flex-col items-start md:items-end gap-1">
             {hasFreeShipping && (
-              <span className="badge-free-shipping flex items-center gap-0.5 w-fit">
+              <span className="badge-free-shipping flex items-center gap-0.5 w-fit text-[10px] sm:text-xs">
                 <Truck className="w-2.5 h-2.5" />
-                <span className="hidden sm:inline">Free</span> Shipping
+                <span>Free Shipping</span>
               </span>
             )}
           </div>
