@@ -61,6 +61,9 @@ const Product = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [mobileImageIndex, setMobileImageIndex] = useState(0);
+  const [hasUserSelectedVariant, setHasUserSelectedVariant] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   const { data: product, isLoading, error } = useShopifyProduct(id || "");
   const { data: allProducts } = useShopifyProducts(50);
@@ -71,7 +74,7 @@ const Product = () => {
   // Get the selected variant
   const selectedVariant = product?.variants.edges[selectedVariantIndex]?.node;
 
-  // Filter images: show selected variant image + general images, hide other variant images
+  // Filter images: show default images first, only show variant image when user selects a variant
   const filteredImages = useMemo(() => {
     if (!product) return [];
     
@@ -88,10 +91,14 @@ const Product = () => {
     // Get the selected variant's image URL
     const selectedVariantImageUrl = selectedVariant?.image?.url;
     
-    // Filter images:
-    // - Keep images that are NOT variant images (general product images)
-    // - Keep the image that belongs to the SELECTED variant
-    // - Remove images that belong to OTHER variants
+    // If user hasn't selected a variant yet, show only general product images (not variant-specific)
+    if (!hasUserSelectedVariant) {
+      const generalImages = allImages.filter(img => !variantImageUrls.has(img.node.url));
+      // If no general images exist, show first image
+      return generalImages.length > 0 ? generalImages : allImages.slice(0, 1);
+    }
+    
+    // User has selected a variant - filter to show general + selected variant image
     const filtered = allImages.filter(img => {
       const imageUrl = img.node.url;
       
@@ -104,8 +111,8 @@ const Product = () => {
       return imageUrl === selectedVariantImageUrl;
     });
     
-    // Put selected variant image first if it exists
-    if (selectedVariantImageUrl) {
+    // Put selected variant image first if it exists and user has selected
+    if (selectedVariantImageUrl && hasUserSelectedVariant) {
       const selectedIndex = filtered.findIndex(img => img.node.url === selectedVariantImageUrl);
       if (selectedIndex > 0) {
         const [selectedImg] = filtered.splice(selectedIndex, 1);
@@ -114,7 +121,7 @@ const Product = () => {
     }
     
     return filtered.length > 0 ? filtered : allImages.slice(0, 1);
-  }, [product, selectedVariant]);
+  }, [product, selectedVariant, hasUserSelectedVariant]);
 
   // Smart related products - filter by device compatibility
   const relatedProducts = useMemo(() => {
@@ -156,6 +163,9 @@ const Product = () => {
   const handleOptionChange = (optionName: string, optionValue: string) => {
     if (!product) return;
     
+    // Mark that user has selected a variant
+    setHasUserSelectedVariant(true);
+    
     // Get current selected options
     const currentOptions = selectedVariant?.selectedOptions || [];
     
@@ -173,6 +183,32 @@ const Product = () => {
     
     if (matchingVariantIndex >= 0) {
       setSelectedVariantIndex(matchingVariantIndex);
+    }
+  };
+  
+  // Touch swipe handlers for mobile
+  const minSwipeDistance = 50;
+  
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+  
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+  
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe && filteredImages.length > 1) {
+      setMobileImageIndex((prev) => (prev + 1) % filteredImages.length);
+    }
+    if (isRightSwipe && filteredImages.length > 1) {
+      setMobileImageIndex((prev) => (prev - 1 + filteredImages.length) % filteredImages.length);
     }
   };
 
@@ -371,8 +407,13 @@ const Product = () => {
             <div className="grid lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12">
               {/* Image Gallery */}
               <div className="space-y-4 bg-gallery rounded-2xl p-4 lg:p-6">
-                {/* Mobile Carousel */}
-                <div className="md:hidden relative">
+                {/* Mobile Carousel with swipe support */}
+                <div 
+                  className="md:hidden relative"
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                >
                   <div className="aspect-square bg-white rounded-xl overflow-hidden">
                     <div className="w-full h-full p-3">
                       <img 
@@ -384,26 +425,28 @@ const Product = () => {
                   </div>
                   {filteredImages.length > 1 && (
                     <>
+                      {/* Minimal arrow buttons - positioned at edges */}
                       <button 
                         onClick={prevMobileImage}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-background/80 rounded-full flex items-center justify-center shadow-md"
+                        className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-background/60 backdrop-blur-sm rounded-full flex items-center justify-center"
                       >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className="w-4 h-4 text-foreground/70" />
                       </button>
                       <button 
                         onClick={nextMobileImage}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-background/80 rounded-full flex items-center justify-center shadow-md"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-background/60 backdrop-blur-sm rounded-full flex items-center justify-center"
                       >
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className="w-4 h-4 text-foreground/70" />
                       </button>
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                      {/* Dot indicators */}
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
                         {filteredImages.map((_, index) => (
                           <button
                             key={index}
                             onClick={() => setMobileImageIndex(index)}
                             className={cn(
-                              "w-2 h-2 rounded-full transition-colors",
-                              mobileImageIndex === index ? "bg-primary" : "bg-background/60"
+                              "w-1.5 h-1.5 rounded-full transition-all",
+                              mobileImageIndex === index ? "bg-primary w-3" : "bg-foreground/30"
                             )}
                           />
                         ))}

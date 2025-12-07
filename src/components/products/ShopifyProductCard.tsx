@@ -46,10 +46,52 @@ const colorMap: Record<string, { base: string; gradient: string }> = {
   lavender: { base: '#E6E6FA', gradient: 'linear-gradient(135deg, #F0F0FF 0%, #E6E6FA 50%, #D6D6EA 100%)' },
   charcoal: { base: '#36454F', gradient: 'linear-gradient(135deg, #46555F 0%, #36454F 50%, #26353F 100%)' },
   copper: { base: '#B87333', gradient: 'linear-gradient(135deg, #D89050 0%, #B87333 50%, #985020 100%)' },
+  bronze: { base: '#CD7F32', gradient: 'linear-gradient(135deg, #DAA06D 0%, #CD7F32 50%, #A05A2C 100%)' },
+  transparent: { base: '#E8E8E8', gradient: 'linear-gradient(135deg, #FFFFFF 0%, #E8E8E8 50%, #D0D0D0 100%)' },
+  clear: { base: '#E8E8E8', gradient: 'linear-gradient(135deg, #FFFFFF 0%, #E8E8E8 50%, #D0D0D0 100%)' },
+  champagne: { base: '#F7E7CE', gradient: 'linear-gradient(135deg, #FFF5E6 0%, #F7E7CE 50%, #E8D4B8 100%)' },
+  titanium: { base: '#878681', gradient: 'linear-gradient(135deg, #A5A5A3 0%, #878681 50%, #6A6966 100%)' },
+  platinum: { base: '#E5E4E2', gradient: 'linear-gradient(135deg, #F5F5F5 0%, #E5E4E2 50%, #D5D5D2 100%)' },
+  cyan: { base: '#00BCD4', gradient: 'linear-gradient(135deg, #4DD0E1 0%, #00BCD4 50%, #0097A7 100%)' },
+  turquoise: { base: '#40E0D0', gradient: 'linear-gradient(135deg, #7FFFD4 0%, #40E0D0 50%, #20B2AA 100%)' },
+  maroon: { base: '#800000', gradient: 'linear-gradient(135deg, #A00000 0%, #800000 50%, #600000 100%)' },
+  violet: { base: '#8B00FF', gradient: 'linear-gradient(135deg, #9F40FF 0%, #8B00FF 50%, #7000CC 100%)' },
+  indigo: { base: '#4B0082', gradient: 'linear-gradient(135deg, #6A00B0 0%, #4B0082 50%, #3A0065 100%)' },
+  khaki: { base: '#F0E68C', gradient: 'linear-gradient(135deg, #FFF5B8 0%, #F0E68C 50%, #D4C87C 100%)' },
+  sand: { base: '#C2B280', gradient: 'linear-gradient(135deg, #D4C498 0%, #C2B280 50%, #A89860 100%)' },
+  camel: { base: '#C19A6B', gradient: 'linear-gradient(135deg, #D4B080 0%, #C19A6B 50%, #A07850 100%)' },
+};
+
+// Get base color for split display
+const getBaseColor = (colorName: string): string => {
+  const lowerColor = colorName.toLowerCase().trim();
+  
+  if (colorMap[lowerColor]) {
+    return colorMap[lowerColor].base;
+  }
+  
+  // Partial match
+  const sortedKeys = Object.keys(colorMap).sort((a, b) => b.length - a.length);
+  for (const key of sortedKeys) {
+    if (lowerColor.includes(key)) {
+      return colorMap[key].base;
+    }
+  }
+  
+  return '#888888';
 };
 
 const getColorStyle = (colorName: string): { background: string } => {
   const lowerColor = colorName.toLowerCase().trim();
+  
+  // Check for multi-color names like "gold silver" or "gold/silver"
+  const parts = lowerColor.split(/[\s\/,&]+/).filter(p => p.length > 0);
+  if (parts.length >= 2) {
+    const color1 = getBaseColor(parts[0]);
+    const color2 = getBaseColor(parts[1]);
+    // Create split gradient (50/50)
+    return { background: `linear-gradient(135deg, ${color1} 0%, ${color1} 50%, ${color2} 50%, ${color2} 100%)` };
+  }
   
   // Direct match first
   if (colorMap[lowerColor]) {
@@ -68,6 +110,9 @@ const getColorStyle = (colorName: string): { background: string } => {
   return { background: 'linear-gradient(135deg, #9A9A9A 0%, #888888 50%, #666666 100%)' };
 };
 
+// Multicolor indicator gradient (rainbow effect)
+const multiColorGradient = 'conic-gradient(from 0deg, #EF4444, #F97316, #EAB308, #22C55E, #3B82F6, #8B5CF6, #EC4899, #EF4444)';
+
 export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const { node } = product;
@@ -81,7 +126,7 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
   const hasFreeShipping = price >= 25;
   
   // Extract unique colors from variants - check multiple possible option names
-  const uniqueColors = Array.from(new Set(
+  const allUniqueColors = Array.from(new Set(
     node.variants.edges
       .flatMap(v => v.node.selectedOptions || [])
       .filter(opt => {
@@ -89,7 +134,11 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
         return name === 'color' || name === 'colour' || name === 'style' || name.includes('color');
       })
       .map(opt => opt.value)
-  )).slice(0, 4);
+  ));
+  
+  // For display: show max 4 colors, if more show 3 + multicolor indicator
+  const hasMoreColors = allUniqueColors.length > 4;
+  const displayColors = hasMoreColors ? allUniqueColors.slice(0, 3) : allUniqueColors.slice(0, 4);
   
   // Find variant matching selected color filter
   const matchingVariant = selectedColor
@@ -183,16 +232,24 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
           </div>
         </div>
         
-        {uniqueColors.length > 1 && (
-          <div className="absolute bottom-3 left-3 hidden md:flex items-center gap-1">
-            {uniqueColors.map((color, index) => (
+        {/* Color dots - show on both mobile and desktop */}
+        {displayColors.length > 1 && (
+          <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 flex items-center gap-0.5 md:gap-1">
+            {displayColors.map((color, index) => (
               <div
                 key={index}
-                className="w-3.5 h-3.5 rounded-full border border-black/20 shadow-sm ring-1 ring-white/50"
+                className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-full border border-black/15 shadow-sm ring-1 ring-white/60"
                 style={getColorStyle(color)}
                 title={color}
               />
             ))}
+            {hasMoreColors && (
+              <div
+                className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-full border border-black/15 shadow-sm ring-1 ring-white/60"
+                style={{ background: multiColorGradient }}
+                title={`+${allUniqueColors.length - 3} more colors`}
+              />
+            )}
           </div>
         )}
       </Link>
