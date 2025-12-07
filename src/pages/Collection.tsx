@@ -6,6 +6,7 @@ import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/layout/CartDrawer";
+import { StickyCart } from "@/components/layout/StickyCart";
 import { ShopifyProductCard } from "@/components/products/ShopifyProductCard";
 import { TrustGuaranteeSection } from "@/components/home/TrustGuaranteeSection";
 import { Button } from "@/components/ui/button";
@@ -522,6 +523,8 @@ const Collection = () => {
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
         />
+        
+        <StickyCart onClick={() => setIsCartOpen(true)} />
       </div>
     </>
   );

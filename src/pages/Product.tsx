@@ -6,6 +6,7 @@ import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/layout/CartDrawer";
+import { StickyCart } from "@/components/layout/StickyCart";
 import { TrustGuaranteeSection } from "@/components/home/TrustGuaranteeSection";
 import { Button } from "@/components/ui/button";
 import { AddToCartButton } from "@/components/AddToCartButton";
@@ -866,6 +867,8 @@ const Product = () => {
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
         />
+        
+        <StickyCart onClick={() => setIsCartOpen(true)} />
       </div>
     </>
   );
