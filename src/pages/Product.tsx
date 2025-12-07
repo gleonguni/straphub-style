@@ -26,8 +26,8 @@ function useCountdown() {
       const now = new Date();
       const currentHour = now.getHours();
       
-      // Only show countdown between 7am (7) and 8pm (20)
-      if (currentHour < 7 || currentHour >= 20) {
+      // Only show countdown between 7am (7) and 5pm (17)
+      if (currentHour < 7 || currentHour >= 17) {
         setIsActive(false);
         return { hours: 0, minutes: 0, seconds: 0 };
       }
@@ -35,7 +35,7 @@ function useCountdown() {
       setIsActive(true);
       
       const cutoff = new Date();
-      cutoff.setHours(20, 0, 0, 0); // 8pm cutoff
+      cutoff.setHours(17, 0, 0, 0); // 5pm cutoff
 
       const diff = cutoff.getTime() - now.getTime();
       const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -191,6 +191,7 @@ const Product = () => {
       product: { node: product },
       variantId: selectedVariant.id,
       variantTitle: selectedVariant.title,
+      variantImage: selectedVariant.image?.url, // Store variant image
       price: selectedVariant.price,
       quantity: 1,
       selectedOptions: selectedVariant.selectedOptions,
@@ -303,6 +304,7 @@ const Product = () => {
       product: relatedProduct,
       variantId: firstVariant.id,
       variantTitle: firstVariant.title,
+      variantImage: firstVariant.image?.url,
       price: firstVariant.price,
       quantity: 1,
       selectedOptions: firstVariant.selectedOptions,
