@@ -4,6 +4,7 @@ import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/layout/CartDrawer";
+import { StickyCart } from "@/components/layout/StickyCart";
 import { HeroSection } from "@/components/home/HeroSection";
 import { TrustSection } from "@/components/home/TrustSection";
 import { FeaturedCollections } from "@/components/home/FeaturedCollections";
@@ -45,6 +46,8 @@ const Index = () => {
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
         />
+        
+        <StickyCart onClick={() => setIsCartOpen(true)} />
       </div>
     </>
   );
