@@ -8,13 +8,13 @@ const trustItems = [
   },
   {
     icon: RefreshCw,
-    title: "100-Day Returns",
+    title: "30-Day Returns",
     description: "Free exchanges & easy returns",
   },
   {
     icon: Zap,
     title: "Same-Day Dispatch",
-    description: "Order before 9pm",
+    description: "Order before 5pm",
   },
   {
     icon: Heart,

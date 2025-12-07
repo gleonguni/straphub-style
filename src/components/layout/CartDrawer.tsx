@@ -24,23 +24,23 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const amountToFreeShipping = FREE_SHIPPING_THRESHOLD - subtotal;
   const currencyCode = items[0]?.price.currencyCode || 'GBP';
 
-  // Get accessory recommendations based on cart items
+  // Get accessory recommendations based on cart items - must match exact device compatibility
   const accessoryRecommendations = useMemo(() => {
     if (!allProducts || items.length === 0) return [];
     
-    // Get brands from cart items
-    const cartBrands = new Set<string>();
+    // Get brands AND models from cart items for precise matching
+    const cartCompatibility: Array<{ brand: string; models: string[] }> = [];
     items.forEach(item => {
       const compat = getDeviceCompatibility(item.product.node.title);
       if (compat.brand !== 'universal') {
-        cartBrands.add(compat.brand);
+        cartCompatibility.push(compat);
       }
     });
     
     // Get variant IDs already in cart
     const cartVariantIds = new Set(items.map(i => i.variantId));
     
-    // Find accessories that match cart brands
+    // Find accessories that match cart items precisely
     const accessories = allProducts.filter(p => {
       const isAcc = isAccessory(p.node.title, p.node.description);
       if (!isAcc) return false;
@@ -49,12 +49,38 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       const hasInCart = p.node.variants.edges.some(v => cartVariantIds.has(v.node.id));
       if (hasInCart) return false;
       
-      // If no brand preference, show all accessories
-      if (cartBrands.size === 0) return true;
+      // If no cart items with brand preference, show all accessories
+      if (cartCompatibility.length === 0) return true;
       
-      // Check if accessory matches cart brands
+      // Check if accessory matches cart items
       const accCompat = getDeviceCompatibility(p.node.title);
-      return cartBrands.has(accCompat.brand) || accCompat.brand === 'universal';
+      
+      // Accessory must match at least one cart item's brand
+      const matchesBrand = cartCompatibility.some(cartItem => 
+        accCompat.brand === cartItem.brand || accCompat.brand === 'universal'
+      );
+      
+      if (!matchesBrand) return false;
+      
+      // If accessory has specific models and cart item has specific models, they should overlap
+      if (accCompat.models.length > 0) {
+        const hasModelMatch = cartCompatibility.some(cartItem => {
+          // If cart item has no specific models, brand match is enough
+          if (cartItem.models.length === 0) return true;
+          // Check for model overlap
+          return accCompat.models.some(accModel => 
+            cartItem.models.some(cartModel => {
+              // Normalize for comparison
+              const accNum = accModel.replace(/\D/g, '');
+              const cartNum = cartModel.replace(/\D/g, '');
+              return accNum === cartNum;
+            })
+          );
+        });
+        if (!hasModelMatch) return false;
+      }
+      
+      return true;
     });
     
     return accessories.slice(0, 2);
