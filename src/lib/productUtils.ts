@@ -272,55 +272,78 @@ export function getCompatibilityText(title: string, description?: string): strin
     const sizes = analysis.watchSizes;
     let sizeText = sizes.length > 0 ? ` (${sizes.join('/')})` : '';
     
-    // Parse entire text for all Galaxy Watch models including Classic variants
+    // Parse entire ORIGINAL title (not normalized) for exact model detection
+    const originalTitle = title;
     const models: string[] = [];
+    const processedNums = new Set<string>();
     
-    // Look for all numbers after "galaxy watch" including separated mentions
-    // Patterns: "galaxy watch 7 6 classic", "galaxy watch 8/8c", "galaxy watch 7 / 6 / 6 classic"
-    const galaxyWatchSection = text.match(/galaxy\s*watch[^a-z]*(?:[\d\s\/,c]+(?:classic)?)+/gi);
-    
-    if (galaxyWatchSection) {
-      const sectionText = galaxyWatchSection.join(' ');
+    // Pattern 1: Direct "8/8C" or "8/ 8C" or "8 / 8c" pattern (exact notation from title)
+    const slashPattern = /galaxy\s*watch\s*(\d+)\s*[\/]\s*(\d+[cC]?)/gi;
+    let slashMatch;
+    while ((slashMatch = slashPattern.exec(originalTitle)) !== null) {
+      const model1 = slashMatch[1];
+      const model2 = slashMatch[2].toLowerCase();
       
-      // Find all numbers in the section
-      const allNums = sectionText.match(/\d+/g);
-      if (allNums) {
-        const processedNums = new Set<number>();
-        
-        allNums.forEach(n => {
-          const num = parseInt(n);
-          if (num >= 1 && num <= 10 && !processedNums.has(num)) {
-            processedNums.add(num);
-            
-            // Check if this number has a Classic variant
-            // Patterns: "6c", "6 c", "6 classic", "6c", "watch 6 classic"
-            const classicPatterns = [
-              new RegExp(`\\b${n}\\s*c\\b`, 'i'),
-              new RegExp(`\\b${n}\\s+classic\\b`, 'i'),
-              new RegExp(`\\b${n}c\\b`, 'i'),
-            ];
-            
-            const hasClassic = classicPatterns.some(p => p.test(text));
-            
-            if (hasClassic) {
-              models.push(`${n}c`);
-            } else {
-              models.push(n);
-            }
-          }
-        });
+      if (!processedNums.has(model1)) {
+        models.push(model1);
+        processedNums.add(model1);
+      }
+      
+      // Handle model2 - could be "8c" or "8C" meaning Classic
+      const cleanModel2 = model2.replace(/c$/, '');
+      const isClassic = model2.endsWith('c');
+      
+      if (isClassic && !processedNums.has(`${cleanModel2}c`)) {
+        models.push(`${cleanModel2}c`);
+        processedNums.add(`${cleanModel2}c`);
+      } else if (!isClassic && !processedNums.has(cleanModel2)) {
+        models.push(cleanModel2);
+        processedNums.add(cleanModel2);
+      }
+    }
+    
+    // Pattern 2: Individual numbers with optional "c" or "classic" suffix
+    // Matches: "watch 8", "watch 8c", "watch 8 classic", "watch 7", etc.
+    const numberPattern = /galaxy\s*watch\s*(\d+)\s*(c(?:lassic)?)?/gi;
+    let numMatch;
+    while ((numMatch = numberPattern.exec(originalTitle)) !== null) {
+      const num = numMatch[1];
+      const classicSuffix = numMatch[2];
+      
+      if (parseInt(num) >= 1 && parseInt(num) <= 10) {
+        if (classicSuffix && !processedNums.has(`${num}c`)) {
+          models.push(`${num}c`);
+          processedNums.add(`${num}c`);
+        } else if (!classicSuffix && !processedNums.has(num)) {
+          models.push(num);
+          processedNums.add(num);
+        }
+      }
+    }
+    
+    // Pattern 3: Standalone "Xc" or "X classic" patterns anywhere in text
+    const standaloneClassic = /\b(\d+)\s*[cC](?:lassic)?\b/g;
+    let classicMatch;
+    while ((classicMatch = standaloneClassic.exec(originalTitle)) !== null) {
+      const num = classicMatch[1];
+      if (parseInt(num) >= 1 && parseInt(num) <= 10 && !processedNums.has(`${num}c`)) {
+        models.push(`${num}c`);
+        processedNums.add(`${num}c`);
       }
     }
     
     // Check for Ultra variant  
     const hasUltra = /ultra/i.test(text);
     
-    // Sort models numerically, keeping 'c' suffix
+    // Sort models: higher numbers first, then non-classic before classic
     const sortedModels = [...new Set(models)].sort((a, b) => {
       const numA = parseInt(a.replace('c', ''));
       const numB = parseInt(b.replace('c', ''));
-      if (numA !== numB) return numB - numA; // Descending order (newer first)
-      return a.includes('c') ? 1 : -1; // Regular before classic
+      if (numA !== numB) return numB - numA; // Descending (newer first)
+      // Same number: regular before classic (e.g., 8 before 8c)
+      const aIsClassic = a.includes('c');
+      const bIsClassic = b.includes('c');
+      return aIsClassic === bIsClassic ? 0 : aIsClassic ? 1 : -1;
     });
     
     let result = 'Samsung Galaxy Watch';
@@ -328,7 +351,7 @@ export function getCompatibilityText(title: string, description?: string): strin
       result += ` ${sortedModels.join('/')}`;
     }
     if (hasUltra) {
-      result += ' Ultra';
+      result += sortedModels.length > 0 ? ' Ultra' : ' Ultra';
     }
     if (sizeText) {
       result += sizeText;

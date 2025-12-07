@@ -1,45 +1,70 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ArrowRight, Truck, RefreshCw } from "lucide-react";
 import heroImage from "@/assets/hero-lifestyle.jpg";
+
 export function HeroSection() {
-  return <section className="relative h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
+  return (
+    <section className="relative h-[450px] sm:h-[520px] md:h-[620px] lg:h-[720px] overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0">
-        <img src={heroImage} alt="Woman wearing smartwatch with stylish strap" className="w-full h-full object-cover" />
+        <img 
+          src={heroImage} 
+          alt="Woman wearing smartwatch with stylish strap" 
+          className="w-full h-full object-cover"
+        />
         <div className="hero-overlay absolute inset-0" />
+        {/* Subtle gradient overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20" />
       </div>
 
       {/* Content */}
       <div className="container relative h-full flex items-center px-4 sm:px-6">
         <div className="max-w-xl text-background">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 animate-fade-up">
-            Hey,<br />
-            <span className="text-primary-foreground">Watch</span><br />
-            It
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-background/90 mb-6 animate-fade-up" style={{
-          animationDelay: "0.1s"
-        }}>
-            Premium smartwatch straps for everyone.<br className="hidden sm:block" />
-            Take a look.      
+          <p className="text-sm sm:text-base text-background/80 uppercase tracking-widest mb-2 sm:mb-3 font-medium animate-fade-up">
+            Premium Watch Straps
           </p>
-          <div className="flex flex-wrap gap-2 sm:gap-3 animate-fade-up" style={{
-          animationDelay: "0.2s"
-        }}>
-            <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm sm:text-base">
-              <Link to="/collections/all">Shop All Straps</Link>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[0.95] mb-4 sm:mb-5 animate-fade-up">
+            Elevate Your
+            <br />
+            <span className="text-primary-foreground bg-primary/20 backdrop-blur-sm px-2 -ml-2">Style</span>
+          </h1>
+          <p className="text-base sm:text-lg md:text-xl text-background/90 mb-6 sm:mb-8 animate-fade-up leading-relaxed max-w-md" style={{
+            animationDelay: "0.1s"
+          }}>
+            UK's finest collection of smartwatch straps. Apple, Samsung, Garmin & more.
+          </p>
+          
+          {/* CTA Buttons */}
+          <div className="flex flex-wrap gap-3 sm:gap-4 mb-6 sm:mb-8 animate-fade-up" style={{
+            animationDelay: "0.15s"
+          }}>
+            <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm sm:text-base group shadow-lg">
+              <Link to="/collections/all">
+                Shop All Straps
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-background/30 bg-background/10 text-background hover:bg-background/20 backdrop-blur-sm text-sm sm:text-base">
+            <Button asChild size="lg" variant="outline" className="border-background/40 bg-background/10 text-background hover:bg-background/20 backdrop-blur-sm text-sm sm:text-base">
               <Link to="/collections/apple-watch">Apple Watch</Link>
             </Button>
           </div>
+
+          {/* Trust Points */}
+          <div className="flex flex-wrap gap-4 sm:gap-6 animate-fade-up text-xs sm:text-sm text-background/80" style={{
+            animationDelay: "0.2s"
+          }}>
+            <span className="flex items-center gap-1.5">
+              <Truck className="w-4 h-4" />
+              Free UK Shipping
+            </span>
+            <span className="flex items-center gap-1.5">
+              <RefreshCw className="w-4 h-4" />
+              30-Day Returns
+            </span>
+          </div>
         </div>
       </div>
-
-      {/* Slide Indicators */}
-      <div className="absolute bottom-4 sm:bottom-6 right-4 sm:right-6 flex gap-2">
-        <span className="w-6 sm:w-8 h-6 sm:h-8 rounded-full bg-background flex items-center justify-center text-xs sm:text-sm font-medium text-foreground">1</span>
-        <span className="w-6 sm:w-8 h-6 sm:h-8 rounded-full bg-background/30 flex items-center justify-center text-xs sm:text-sm font-medium text-background">2</span>
-      </div>
-    </section>;
+    </section>
+  );
 }

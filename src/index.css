@@ -6,88 +6,88 @@
 
 @layer base {
   :root {
-    /* StrapHub Color Palette - Cool Teal/Slate Professional Theme */
-    --background: 0 0% 100%;
-    --foreground: 220 20% 10%;
+    /* StrapHub Color Palette - Deeper, Richer Contrasts */
+    --background: 210 20% 99%;
+    --foreground: 220 25% 8%;
     
-    /* Header - Slightly off-white */
-    --header: 220 15% 98%;
-    --header-foreground: 220 20% 10%;
+    /* Header - Subtle warm white */
+    --header: 210 15% 97%;
+    --header-foreground: 220 25% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 220 25% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 220 25% 8%;
 
-    /* Primary - Deep Teal */
-    --primary: 185 70% 35%;
+    /* Primary - Rich Deep Teal */
+    --primary: 180 75% 28%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Light Gray */
-    --secondary: 220 15% 96%;
-    --secondary-foreground: 220 20% 10%;
+    /* Secondary - Warm Gray */
+    --secondary: 215 20% 94%;
+    --secondary-foreground: 220 25% 8%;
 
-    /* Muted - Subtle Gray */
-    --muted: 220 15% 95%;
-    --muted-foreground: 220 10% 45%;
+    /* Muted - Softer Gray */
+    --muted: 215 18% 93%;
+    --muted-foreground: 220 12% 40%;
 
-    /* Accent - Teal Highlight */
-    --accent: 185 65% 45%;
+    /* Accent - Vibrant Teal */
+    --accent: 175 70% 38%;
     --accent-foreground: 0 0% 100%;
 
     /* Destructive - Error Red */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Success - Green */
-    --success: 160 60% 40%;
+    /* Success - Rich Green */
+    --success: 155 65% 35%;
     --success-foreground: 0 0% 100%;
 
     /* Sale/Badge - Warm Orange */
-    --sale: 25 95% 55%;
+    --sale: 25 95% 50%;
     --sale-foreground: 0 0% 100%;
 
     /* Border & Input */
-    --border: 220 15% 90%;
-    --input: 220 15% 90%;
-    --ring: 185 70% 35%;
+    --border: 215 18% 88%;
+    --input: 215 18% 88%;
+    --ring: 180 75% 28%;
 
     --radius: 0.5rem;
 
-    /* Announcement Bar */
-    --announcement: 185 70% 35%;
+    /* Announcement Bar - Richer */
+    --announcement: 180 75% 28%;
     --announcement-foreground: 0 0% 100%;
 
-    /* Trust Section */
-    --trust-bg: 220 15% 97%;
+    /* Trust Section - Warmer */
+    --trust-bg: 210 25% 96%;
 
     /* Product Gallery Background */
-    --gallery-bg: 220 15% 97%;
+    --gallery-bg: 210 20% 96%;
     
     /* Filter Sidebar Background */
-    --filter-bg: 220 15% 98%;
+    --filter-bg: 210 18% 97%;
 
     /* Sidebar */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 220 10% 30%;
-    --sidebar-primary: 185 70% 35%;
+    --sidebar-background: 210 20% 98%;
+    --sidebar-foreground: 220 15% 25%;
+    --sidebar-primary: 180 75% 28%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 95%;
-    --sidebar-accent-foreground: 220 20% 10%;
-    --sidebar-border: 220 15% 90%;
-    --sidebar-ring: 185 70% 35%;
+    --sidebar-accent: 215 20% 94%;
+    --sidebar-accent-foreground: 220 25% 8%;
+    --sidebar-border: 215 18% 88%;
+    --sidebar-ring: 180 75% 28%;
 
-    /* Hero Gradient */
-    --hero-gradient: linear-gradient(135deg, hsl(185 70% 35%) 0%, hsl(200 60% 30%) 100%);
-    --hero-overlay: linear-gradient(90deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0) 100%);
+    /* Hero Gradient - Deeper, More Impactful */
+    --hero-gradient: linear-gradient(135deg, hsl(180 75% 25%) 0%, hsl(200 70% 22%) 100%);
+    --hero-overlay: linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-product: 0 2px 8px rgba(0, 0, 0, 0.08);
-    --shadow-product-hover: 0 8px 25px rgba(0, 0, 0, 0.12);
+    /* Shadows - Slightly Deeper */
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08);
+    --shadow-md: 0 4px 8px -1px rgb(0 0 0 / 0.12), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+    --shadow-lg: 0 12px 20px -3px rgb(0 0 0 / 0.12), 0 4px 8px -4px rgb(0 0 0 / 0.08);
+    --shadow-product: 0 2px 10px rgba(0, 0, 0, 0.1);
+    --shadow-product-hover: 0 10px 30px rgba(0, 0, 0, 0.15);
   }
 
   .dark {
