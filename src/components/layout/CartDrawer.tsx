@@ -24,66 +24,94 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const amountToFreeShipping = FREE_SHIPPING_THRESHOLD - subtotal;
   const currencyCode = items[0]?.price.currencyCode || 'GBP';
 
-  // Get accessory recommendations based on cart items - must match exact device compatibility
+  // Get accessory recommendations based on cart items - must match EXACT device + size compatibility
   const accessoryRecommendations = useMemo(() => {
     if (!allProducts || items.length === 0) return [];
     
-    // Get brands AND models from cart items for precise matching
-    const cartCompatibility: Array<{ brand: string; models: string[] }> = [];
+    // Get detailed compatibility from cart items including sizes
+    const cartCompatibility: Array<{ brand: string; models: string[]; sizes: string[]; title: string }> = [];
     items.forEach(item => {
       const compat = getDeviceCompatibility(item.product.node.title);
       if (compat.brand !== 'universal') {
-        cartCompatibility.push(compat);
+        cartCompatibility.push({ ...compat, title: item.product.node.title });
       }
     });
     
     // Get variant IDs already in cart
     const cartVariantIds = new Set(items.map(i => i.variantId));
     
-    // Find accessories that match cart items precisely
-    const accessories = allProducts.filter(p => {
+    // Find accessories that match cart items EXACTLY
+    const matchedAccessories: Array<{ product: typeof allProducts[0]; matchScore: number; matchingVariant?: typeof allProducts[0]['node']['variants']['edges'][0] }> = [];
+    
+    allProducts.forEach(p => {
       const isAcc = isAccessory(p.node.title, p.node.description);
-      if (!isAcc) return false;
+      if (!isAcc) return;
       
       // Check if any variant is already in cart
       const hasInCart = p.node.variants.edges.some(v => cartVariantIds.has(v.node.id));
-      if (hasInCart) return false;
+      if (hasInCart) return;
       
-      // If no cart items with brand preference, show all accessories
-      if (cartCompatibility.length === 0) return true;
+      // If no cart items with brand preference, skip (we want precise matching)
+      if (cartCompatibility.length === 0) return;
       
-      // Check if accessory matches cart items
+      // Check accessory compatibility
       const accCompat = getDeviceCompatibility(p.node.title);
       
-      // Accessory must match at least one cart item's brand
-      const matchesBrand = cartCompatibility.some(cartItem => 
-        accCompat.brand === cartItem.brand || accCompat.brand === 'universal'
-      );
+      let bestMatchScore = 0;
+      let bestMatchingVariant: typeof p.node.variants.edges[0] | undefined;
       
-      if (!matchesBrand) return false;
-      
-      // If accessory has specific models and cart item has specific models, they should overlap
-      if (accCompat.models.length > 0) {
-        const hasModelMatch = cartCompatibility.some(cartItem => {
-          // If cart item has no specific models, brand match is enough
-          if (cartItem.models.length === 0) return true;
-          // Check for model overlap
-          return accCompat.models.some(accModel => 
+      cartCompatibility.forEach(cartItem => {
+        // Must match brand
+        if (accCompat.brand !== cartItem.brand && accCompat.brand !== 'universal') return;
+        
+        let score = 1; // Brand match
+        
+        // Check model match
+        if (accCompat.models.length > 0 && cartItem.models.length > 0) {
+          const modelMatch = accCompat.models.some(accModel => 
             cartItem.models.some(cartModel => {
-              // Normalize for comparison
-              const accNum = accModel.replace(/\D/g, '');
-              const cartNum = cartModel.replace(/\D/g, '');
+              const accNum = accModel.replace(/[^0-9c]/gi, '').toLowerCase();
+              const cartNum = cartModel.replace(/[^0-9c]/gi, '').toLowerCase();
               return accNum === cartNum;
             })
           );
-        });
-        if (!hasModelMatch) return false;
-      }
+          if (modelMatch) score += 2; // Model match is more valuable
+          else return; // If accessory specifies models, it MUST match
+        }
+        
+        // Check size match - find variant with matching size
+        if (cartItem.sizes.length > 0) {
+          // Look for a variant that matches the cart item's size
+          const matchingVariant = p.node.variants.edges.find(v => {
+            const variantTitle = v.node.title.toLowerCase();
+            return cartItem.sizes.some(size => 
+              variantTitle.includes(size.toLowerCase().replace('mm', '')) ||
+              variantTitle.includes(size.toLowerCase())
+            );
+          });
+          
+          if (matchingVariant) {
+            score += 3; // Size match is most valuable
+            if (!bestMatchingVariant || score > bestMatchScore) {
+              bestMatchingVariant = matchingVariant;
+            }
+          }
+        }
+        
+        if (score > bestMatchScore) {
+          bestMatchScore = score;
+        }
+      });
       
-      return true;
+      if (bestMatchScore >= 1) {
+        matchedAccessories.push({ product: p, matchScore: bestMatchScore, matchingVariant: bestMatchingVariant });
+      }
     });
     
-    return accessories.slice(0, 2);
+    // Sort by match score (highest first) and return top 2
+    return matchedAccessories
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, 2);
   }, [allProducts, items]);
 
   const handleCheckout = async () => {
@@ -138,23 +166,24 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     }
   };
 
-  const handleAddUpsell = (product: ShopifyProduct) => {
-    const firstVariant = product.node.variants.edges[0]?.node;
-    if (!firstVariant) return;
+  const handleAddUpsell = (product: ShopifyProduct, matchingVariant?: typeof product.node.variants.edges[0]) => {
+    // Use matching variant if provided, otherwise fall back to first variant
+    const variant = matchingVariant?.node || product.node.variants.edges[0]?.node;
+    if (!variant) return;
 
     const cartItem: CartItem = {
       product,
-      variantId: firstVariant.id,
-      variantTitle: firstVariant.title,
-      variantImage: firstVariant.image?.url,
-      price: firstVariant.price,
+      variantId: variant.id,
+      variantTitle: variant.title,
+      variantImage: variant.image?.url,
+      price: variant.price,
       quantity: 1,
-      selectedOptions: firstVariant.selectedOptions,
+      selectedOptions: variant.selectedOptions,
     };
 
     addItem(cartItem);
     toast.success("Added to cart", {
-      description: product.node.title,
+      description: `${product.node.title}${variant.title !== 'Default Title' ? ` - ${variant.title}` : ''}`,
       position: "top-center",
     });
   };
@@ -294,10 +323,13 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     <span className="text-sm font-medium">Complete your order</span>
                   </div>
                   <div className="space-y-2">
-                    {accessoryRecommendations.map((product) => {
-                      const price = product.node.priceRange.minVariantPrice.amount;
-                      const compareAt = product.node.compareAtPriceRange?.minVariantPrice?.amount;
+                    {accessoryRecommendations.map(({ product, matchingVariant }) => {
+                      // Use matching variant price if available
+                      const variant = matchingVariant?.node;
+                      const price = variant?.price.amount || product.node.priceRange.minVariantPrice.amount;
+                      const compareAt = variant?.compareAtPrice?.amount || product.node.compareAtPriceRange?.minVariantPrice?.amount;
                       const hasDiscount = compareAt && parseFloat(compareAt) > parseFloat(price);
+                      const variantLabel = variant && variant.title !== 'Default Title' ? variant.title : null;
                       
                       return (
                         <div key={product.node.id} className="flex items-center gap-3 p-2 border border-border rounded-lg bg-background">
@@ -307,13 +339,16 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                             className="w-12 h-12 flex-shrink-0"
                           >
                             <img 
-                              src={product.node.images.edges[0]?.node.url || '/placeholder.svg'} 
+                              src={variant?.image?.url || product.node.images.edges[0]?.node.url || '/placeholder.svg'} 
                               alt={product.node.title}
                               className="w-full h-full object-contain rounded bg-white p-0.5"
                             />
                           </Link>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium line-clamp-1">{product.node.title}</p>
+                            {variantLabel && (
+                              <p className="text-[10px] text-muted-foreground">{variantLabel}</p>
+                            )}
                             <div className="flex items-center gap-1">
                               <span className={cn("text-xs font-semibold", hasDiscount && "text-success")}>
                                 {formatPrice(price)}
@@ -329,7 +364,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                             size="sm"
                             variant="outline"
                             className="text-xs h-7 px-2"
-                            onClick={() => handleAddUpsell(product)}
+                            onClick={() => handleAddUpsell(product, matchingVariant)}
                           >
                             Add
                           </Button>

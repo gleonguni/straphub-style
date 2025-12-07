@@ -398,9 +398,18 @@ export function isAccessory(title: string, description?: string): boolean {
   return hasAccessoryKeyword && !hasStrapKeyword;
 }
 
-// Helper to extract device compatibility from title
-export function getDeviceCompatibility(title: string): { brand: string; models: string[] } {
+// Helper to extract device compatibility from title with size info
+export function getDeviceCompatibility(title: string): { brand: string; models: string[]; sizes: string[] } {
   const text = title.toLowerCase();
+  
+  // Extract sizes from title
+  const sizes: string[] = [];
+  const sizePattern = /\b(3[89]|4[0-79])\s*mm\b/gi;
+  let sizeMatch;
+  while ((sizeMatch = sizePattern.exec(title)) !== null) {
+    const size = `${sizeMatch[1]}mm`;
+    if (!sizes.includes(size)) sizes.push(size);
+  }
   
   // Apple Watch
   if (/apple|iwatch/.test(text)) {
@@ -416,48 +425,86 @@ export function getDeviceCompatibility(title: string): { brand: string; models: 
     if (/\bse\b/i.test(text)) models.push('SE');
     if (/\bultra\b/i.test(text)) models.push('Ultra');
     
-    return { brand: 'apple', models };
+    return { brand: 'apple', models, sizes };
   }
   
   // Samsung Galaxy Watch
   if (/samsung|galaxy\s*watch/.test(text)) {
     const models: string[] = [];
+    const processedNums = new Set<string>();
     
-    // Extract Galaxy Watch numbers with Classic/Ultra variants
-    const galaxyMatch = text.match(/galaxy\s*watch\s*([\d\s\/,]+)/i);
-    if (galaxyMatch) {
-      const nums = galaxyMatch[1].match(/\d+/g);
-      if (nums) {
-        nums.forEach(n => {
-          models.push(n);
-          // Check for Classic variant for this specific number
-          const classicPattern = new RegExp(`galaxy\\s*watch\\s*${n}\\s*classic|${n}\\s*classic|${n}c`, 'i');
-          if (classicPattern.test(text)) {
-            models.push(`${n} Classic`);
-          }
-        });
+    // Pattern 1: Direct "8/8C" or "8/ 8C" format
+    const slashPattern = /galaxy\s*watch\s*(\d+)\s*[\/]\s*(\d+[cC]?)/gi;
+    let slashMatch;
+    while ((slashMatch = slashPattern.exec(title)) !== null) {
+      const model1 = slashMatch[1];
+      const model2 = slashMatch[2].toLowerCase();
+      
+      if (!processedNums.has(model1)) {
+        models.push(model1);
+        processedNums.add(model1);
+      }
+      
+      const cleanModel2 = model2.replace(/c$/, '');
+      const isClassic = model2.endsWith('c');
+      
+      if (isClassic && !processedNums.has(`${cleanModel2}c`)) {
+        models.push(`${cleanModel2}c`);
+        processedNums.add(`${cleanModel2}c`);
+      } else if (!isClassic && !processedNums.has(cleanModel2)) {
+        models.push(cleanModel2);
+        processedNums.add(cleanModel2);
+      }
+    }
+    
+    // Pattern 2: Individual numbers with optional "c" or "classic"
+    const numberPattern = /galaxy\s*watch\s*(\d+)\s*(c(?:lassic)?)?/gi;
+    let numMatch;
+    while ((numMatch = numberPattern.exec(title)) !== null) {
+      const num = numMatch[1];
+      const classicSuffix = numMatch[2];
+      
+      if (parseInt(num) >= 1 && parseInt(num) <= 10) {
+        if (classicSuffix && !processedNums.has(`${num}c`)) {
+          models.push(`${num}c`);
+          processedNums.add(`${num}c`);
+        } else if (!classicSuffix && !processedNums.has(num)) {
+          models.push(num);
+          processedNums.add(num);
+        }
+      }
+    }
+    
+    // Pattern 3: Standalone "Xc" patterns
+    const standaloneClassic = /\b(\d+)\s*[cC](?:lassic)?\b/g;
+    let classicMatch;
+    while ((classicMatch = standaloneClassic.exec(title)) !== null) {
+      const num = classicMatch[1];
+      if (parseInt(num) >= 1 && parseInt(num) <= 10 && !processedNums.has(`${num}c`)) {
+        models.push(`${num}c`);
+        processedNums.add(`${num}c`);
       }
     }
     
     if (/\bultra\b/i.test(text)) models.push('Ultra');
     
-    return { brand: 'samsung', models: [...new Set(models)] };
+    return { brand: 'samsung', models: [...new Set(models)], sizes };
   }
   
   // Garmin
   if (/garmin/i.test(text)) {
-    return { brand: 'garmin', models: [] };
+    return { brand: 'garmin', models: [], sizes };
   }
   
   // Fitbit
   if (/fitbit/i.test(text)) {
-    return { brand: 'fitbit', models: [] };
+    return { brand: 'fitbit', models: [], sizes };
   }
   
   // Google Pixel
   if (/pixel\s*watch|google/i.test(text)) {
-    return { brand: 'google', models: [] };
+    return { brand: 'google', models: [], sizes };
   }
   
-  return { brand: 'universal', models: [] };
+  return { brand: 'universal', models: [], sizes };
 }
