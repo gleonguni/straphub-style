@@ -12,9 +12,9 @@ import { AddToCartButton } from "@/components/AddToCartButton";
 import { cn } from "@/lib/utils";
 import { useShopifyProduct, useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { useCartStore } from "@/stores/cartStore";
-import { formatPrice, calculateDiscount, CartItem } from "@/lib/shopify";
+import { formatPrice, calculateDiscount, CartItem, isAccessory, getDeviceCompatibility } from "@/lib/shopify";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
-import { getCompatibilityText, getProductProsAndCons, getMaterialDisplayName, getBrandDisplayName } from "@/lib/productUtils";
+import { getCompatibilityText, getProductProsAndCons, getProductSpecifications, checkIsAccessory } from "@/lib/productUtils";
 
 // Countdown timer hook - only active between 7am and 8pm
 function useCountdown() {
@@ -63,7 +63,7 @@ const Product = () => {
   const [mobileImageIndex, setMobileImageIndex] = useState(0);
 
   const { data: product, isLoading, error } = useShopifyProduct(id || "");
-  const { data: relatedProducts } = useShopifyProducts(8);
+  const { data: allProducts } = useShopifyProducts(50);
   const { addItem } = useCartStore();
   const totalItems = useCartStore((state) => state.getTotalItems());
   const countdown = useCountdown();
@@ -115,6 +115,36 @@ const Product = () => {
     
     return filtered.length > 0 ? filtered : allImages.slice(0, 1);
   }, [product, selectedVariant]);
+
+  // Smart related products - filter by device compatibility
+  const relatedProducts = useMemo(() => {
+    if (!allProducts || !product) return [];
+    
+    const currentCompat = getDeviceCompatibility(product.title);
+    const currentIsAccessory = checkIsAccessory(product.title);
+    
+    // Filter products that are relevant
+    return allProducts.filter(p => {
+      // Exclude current product
+      if (p.node.handle === id) return false;
+      
+      const pCompat = getDeviceCompatibility(p.node.title);
+      const pIsAccessory = checkIsAccessory(p.node.title);
+      
+      // If current product is an accessory, show compatible straps + other accessories
+      if (currentIsAccessory) {
+        // Show products for the same brand
+        return pCompat.brand === currentCompat.brand || pCompat.brand === 'universal';
+      }
+      
+      // If current product is a strap, show compatible straps and accessories
+      // Prioritize same brand
+      if (pCompat.brand === currentCompat.brand) return true;
+      if (pCompat.brand === 'universal') return true;
+      
+      return false;
+    }).slice(0, 4);
+  }, [allProducts, product, id]);
 
   // Reset image selection when variant changes
   useEffect(() => {
@@ -570,7 +600,7 @@ const Product = () => {
                   ) : (
                     <div className="flex items-center gap-2 text-sale font-semibold text-sm md:text-base mb-3">
                       <Truck className="w-4 h-4 flex-shrink-0" />
-                      <span>Order before 8pm for same-day dispatch</span>
+                      <span>Order before 5pm for same-day dispatch</span>
                     </div>
                   )}
                   <div className="space-y-2 mt-3">
@@ -666,28 +696,15 @@ const Product = () => {
                     expandedSection === "specs" ? "max-h-[500px] pb-4" : "max-h-0"
                   )}>
                     <div className="space-y-3 text-sm">
-                      <div className="flex justify-between py-2 border-b border-border/50">
-                        <span className="text-muted-foreground">Material</span>
-                        <span className="font-medium">
-                          {getMaterialDisplayName(product.title)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-2 border-b border-border/50">
-                        <span className="text-muted-foreground">Compatibility</span>
-                        <span className="font-medium">
-                          {getBrandDisplayName(product.title)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-2 border-b border-border/50">
-                        <span className="text-muted-foreground">Closure Type</span>
-                        <span className="font-medium">Pin & Tuck</span>
-                      </div>
-                      <div className="flex justify-between py-2">
-                        <span className="text-muted-foreground">Water Resistant</span>
-                        <span className="font-medium">
-                          {product.title.toLowerCase().includes('leather') ? 'Splash Resistant' : 'Yes'}
-                        </span>
-                      </div>
+                      {getProductSpecifications(product.title).map((spec, index) => (
+                        <div key={index} className={cn(
+                          "flex justify-between py-2",
+                          index < getProductSpecifications(product.title).length - 1 && "border-b border-border/50"
+                        )}>
+                          <span className="text-muted-foreground">{spec.label}</span>
+                          <span className="font-medium">{spec.value}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -711,7 +728,7 @@ const Product = () => {
                     <div className="space-y-3 text-sm text-muted-foreground">
                       <p><strong className="text-foreground">Free UK Shipping:</strong> On orders over £25</p>
                       <p><strong className="text-foreground">Standard Delivery:</strong> 2-5 working days</p>
-                      <p><strong className="text-foreground">Same-Day Dispatch:</strong> Order before 8pm</p>
+                      <p><strong className="text-foreground">Same-Day Dispatch:</strong> Order before 5pm</p>
                       <p><strong className="text-foreground">Returns:</strong> 30-day hassle-free returns</p>
                     </div>
                   </div>
