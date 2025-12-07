@@ -141,6 +141,7 @@ export function ShopifyProductCard({ product, selectedColor }: ShopifyProductCar
       product,
       variantId: firstVariant.id,
       variantTitle: firstVariant.title,
+      variantImage: firstVariant.image?.url,
       price: firstVariant.price,
       quantity: 1,
       selectedOptions: firstVariant.selectedOptions,

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { useCartStore } from "@/stores/cartStore";
-import { ShopifyProduct } from "@/lib/shopify";
+import { ShopifyProduct, isAccessory } from "@/lib/shopify";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 
 // Filter mappings for brand/material-based collections
@@ -77,12 +77,18 @@ const collectionNames: Record<string, string> = {
 
 // Filter products based on collection slug
 function filterProductsByCollection(products: ShopifyProduct[], slug: string): ShopifyProduct[] {
-  if (slug === "all") return products;
+  // For "all" straps, exclude accessories
+  if (slug === "all") {
+    return products.filter(product => !isAccessory(product.node.title, product.node.description));
+  }
   
   // Check if it's a brand-based collection
   const brandKeywords = brandFilters[slug];
   if (brandKeywords) {
     return products.filter(product => {
+      // Exclude accessories from strap brand collections
+      if (isAccessory(product.node.title, product.node.description)) return false;
+      
       const searchText = `${product.node.title} ${product.node.description} ${product.node.vendor}`.toLowerCase();
       return brandKeywords.some(keyword => searchText.includes(keyword.toLowerCase()));
     });
@@ -92,6 +98,9 @@ function filterProductsByCollection(products: ShopifyProduct[], slug: string): S
   const materialKeywords = materialFilters[slug];
   if (materialKeywords) {
     return products.filter(product => {
+      // Exclude accessories from material collections
+      if (isAccessory(product.node.title, product.node.description)) return false;
+      
       const searchText = `${product.node.title} ${product.node.description}`.toLowerCase();
       // Also check variant titles for material info
       const variantText = product.node.variants.edges.map(v => v.node.title).join(' ').toLowerCase();
@@ -102,9 +111,24 @@ function filterProductsByCollection(products: ShopifyProduct[], slug: string): S
   
   // Special collections
   if (slug === "accessories") {
+    return products.filter(product => isAccessory(product.node.title, product.node.description));
+  }
+  
+  // Accessories with brand filter
+  if (slug.startsWith("accessories-")) {
+    const brand = slug.replace("accessories-", "");
+    const brandKeywords = brandFilters[brand === "apple" ? "apple-watch" : brand];
+    
     return products.filter(product => {
-      const searchText = `${product.node.title} ${product.node.description}`.toLowerCase();
-      return searchText.includes("accessor") || searchText.includes("charger") || searchText.includes("case") || searchText.includes("stand");
+      if (!isAccessory(product.node.title, product.node.description)) return false;
+      
+      if (brand === "universal") return true;
+      
+      if (brandKeywords) {
+        const searchText = `${product.node.title} ${product.node.description}`.toLowerCase();
+        return brandKeywords.some(keyword => searchText.includes(keyword.toLowerCase()));
+      }
+      return true;
     });
   }
   

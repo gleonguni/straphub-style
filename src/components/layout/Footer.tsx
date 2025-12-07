@@ -7,9 +7,9 @@ export function Footer() {
       <div className="border-b border-background/10">
         <div className="container py-6">
           <div className="flex flex-wrap justify-center gap-6 text-sm text-background/80">
-            <span>✓ Free shipping on all orders above £25</span>
-            <span>✓ 100-day return policy</span>
-            <span>✓ Same-day dispatch (order by 9pm)</span>
+            <span>✓ Free shipping on orders over £25</span>
+            <span>✓ 30-day return policy</span>
+            <span>✓ Same-day dispatch (order before 5pm)</span>
           </div>
         </div>
       </div>
